@@ -1,0 +1,46 @@
+name: Deploy
+
+# Runs on the self-hosted runner on debianserver. Push to main ->
+# sync into /srv/docker/apps/sensebalance, rebuild the compose service,
+# health-check, then mirror the repo to Forgejo as backup.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Sync into app dir
+        run: |
+          rsync -a --delete \
+            --exclude '.git' --exclude '.github' \
+            --exclude 'design' --exclude '__pycache__' \
+            ./ /srv/docker/apps/sensebalance/
+
+      - name: Build & restart container
+        run: |
+          cd /srv/docker/apps
+          docker compose build sensebalance
+          docker compose up -d sensebalance
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 10); do
+            sleep 2
+            curl -sf http://localhost:8093/health && exit 0
+          done
+          echo "health check failed"; docker logs --tail 30 sensebalance; exit 1
+
+      - name: Prune dangling images
+        run: docker image prune -f
+
+      - name: Mirror to Forgejo (backup)
+        if: success()
+        run: |
+          git push --force "http://portes:${{ secrets.FORGEJO_TOKEN }}@192.168.1.159:3000/portes/sensebalance.git" main
