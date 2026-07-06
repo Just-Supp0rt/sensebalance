@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% set loc = 'th' %}
+{% block title %}{{ client.name or client.email }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.zone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0.2rem;
+}
+.zone-focus { background: #e8f5e9; color: var(--focus); border: 1.5px solid #a5d6a7; }
+.zone-avoid { background: #ffebee; color: var(--avoid); border: 1.5px solid #ef9a9a; }
+.flag-pill {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  background: #fff3e0;
+  border: 1.5px solid #ffe0b2;
+  color: #e65100;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0.2rem;
+}
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:0.75rem;">
+  <a href="/admin" style="color:var(--muted);font-size:0.9rem;">‹ {{ t('admin_clients') }}</a>
+</div>
+
+<div class="card">
+  <div style="font-size:1.2rem;font-weight:800;margin-bottom:0.25rem;">{{ client.name or '—' }}</div>
+  <div style="color:var(--muted);font-size:0.9rem;">{{ client.email }}</div>
+  {% if profile.phone %}
+  <div style="color:var(--muted);font-size:0.9rem;">📞 {{ profile.phone }}</div>
+  {% endif %}
+  {% if profile.updated_at %}
+  <div style="color:var(--muted);font-size:0.8rem;margin-top:0.3rem;">
+    {{ t('last_updated') }}: {{ profile.updated_at[:16] | replace('T',' ') }}
+  </div>
+  {% endif %}
+</div>
+
+{% if not profile.updated_at %}
+<div class="card"><p style="color:var(--muted);">{{ t('no_profile') }}</p></div>
+{% else %}
+
+<!-- Body zones -->
+<div class="card">
+  <h2>🗺️ โซนร่างกาย</h2>
+  {% if profile.focus_zones %}
+  <div style="margin-bottom:0.75rem;">
+    <h3 style="color:var(--focus);">● โฟกัส</h3>
+    {% for zid in profile.focus_zones %}
+    <span class="zone-pill zone-focus">
+      {% for z in BODY_ZONES %}{% if z.id == zid %}{{ z.th }}{% endif %}{% endfor %}
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if profile.avoid_zones %}
+  <div>
+    <h3 style="color:var(--avoid);">✕ หลีกเลี่ยง</h3>
+    {% for zid in profile.avoid_zones %}
+    <span class="zone-pill zone-avoid">
+      {% for z in BODY_ZONES %}{% if z.id == zid %}{{ z.th }}{% endif %}{% endfor %}
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if not profile.focus_zones and not profile.avoid_zones %}
+  <p style="color:var(--muted);">—</p>
+  {% endif %}
+</div>
+
+<!-- Pressure -->
+<div class="card">
+  <h2>💪 {{ t('pressure', ) }}</h2>
+  {% set p_map = {'very_light': 'เบามาก', 'light': 'เบา', 'medium': 'ปานกลาง', 'strong': 'หนัก'} %}
+  <span style="font-size:1.1rem;font-weight:700;">{{ p_map.get(profile.pressure, profile.pressure) }}</span>
+</div>
+
+<!-- Problem tags -->
+{% if profile.problem_tags %}
+<div class="card">
+  <h2>⚕️ ปัญหา</h2>
+  {% for tid in profile.problem_tags %}
+  {% for tag in PROBLEM_TAGS %}{% if tag.id == tid %}
+  <span class="zone-pill zone-focus">{{ tag.th }}</span>
+  {% endif %}{% endfor %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Health status answers -->
+{% set yn = {'yes': 'ใช่ ✓', 'no': 'ไม่'} %}
+{% set bp = {'high': 'สูง ⚠️', 'low': 'ต่ำ ⚠️', 'normal': 'ปกติ'} %}
+<div class="card">
+  <h2>🩺 สุขภาพ</h2>
+  <table style="width:100%;border-collapse:collapse;">
+    {% if profile.has_health_problems %}
+    <tr><td style="padding:0.25rem 0;color:var(--muted);">ปัญหาสุขภาพ</td>
+        <td style="font-weight:700;">{{ yn.get(profile.has_health_problems, '—') }}
+        {% if profile.health_problems %} — {{ profile.health_problems }}{% endif %}</td></tr>
+    {% endif %}
+    {% if profile.pregnancy %}
+    <tr><td style="padding:0.25rem 0;color:var(--muted);">ตั้งครรภ์</td>
+        <td style="font-weight:700;">{{ yn.get(profile.pregnancy, '—') }}{% if profile.pregnancy == 'yes' %} ⚠️{% endif %}</td></tr>
+    {% endif %}
+    {% if profile.blood_pressure %}
+    <tr><td style="padding:0.25rem 0;color:var(--muted);">ความดันโลหิต</td>
+        <td style="font-weight:700;">{{ bp.get(profile.blood_pressure, '—') }}</td></tr>
+    {% endif %}
+    {% if profile.exercise %}
+    <tr><td style="padding:0.25rem 0;color:var(--muted);">ออกกำลังกาย</td>
+        <td style="font-weight:700;">{{ yn.get(profile.exercise, '—') }}
+        {% if profile.exercise_detail %} — {{ profile.exercise_detail }}{% endif %}</td></tr>
+    {% endif %}
+    {% if profile.recent_surgery %}
+    <tr><td style="padding:0.25rem 0;color:var(--muted);">ผ่าตัด (6 เดือน)</td>
+        <td style="font-weight:700;">{{ yn.get(profile.recent_surgery, '—') }}{% if profile.recent_surgery == 'yes' %} ⚠️{% endif %}
+        {% if profile.surgery_detail %} — {{ profile.surgery_detail }}{% endif %}</td></tr>
+    {% endif %}
+  </table>
+</div>
+
+<!-- Health flags -->
+{% if profile.health_flags %}
+<div class="card">
+  <h2>🏥 ข้อมูลสุขภาพ</h2>
+  {% for fid in profile.health_flags %}
+  {% for flag in HEALTH_FLAGS %}{% if flag.id == fid %}
+  <span class="flag-pill">⚠️ {{ flag.th }}</span>
+  {% endif %}{% endfor %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Allergies -->
+{% if profile.oil_allergies %}
+<div class="card">
+  <h2>🚫 แพ้น้ำมัน</h2>
+  <p>{{ profile.oil_allergies }}</p>
+</div>
+{% endif %}
+
+<!-- Note -->
+{% if profile.note_original %}
+<div class="card">
+  <h2>📝 หมายเหตุ</h2>
+  {% if profile.note_th %}
+  <p style="font-size:1.05rem;margin-bottom:0.5rem;">{{ profile.note_th }}</p>
+  <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0;">
+  <p style="font-size:0.85rem;color:var(--muted);">ต้นฉบับ: {{ profile.note_original }}</p>
+  {% else %}
+  <p>{{ profile.note_original }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Consent + signature -->
+{% if profile.consent_at or profile.signature_png %}
+<div class="card">
+  <h2>✍️ {{ t('signature') }}</h2>
+  {% if profile.consent_at %}
+  <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;">
+    GDPR ✓ {{ profile.consent_at[:16] | replace('T',' ') }}
+  </p>
+  {% endif %}
+  {% if profile.signature_png %}
+  <img src="{{ profile.signature_png }}" alt="signature"
+       style="max-width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;">
+  {% endif %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

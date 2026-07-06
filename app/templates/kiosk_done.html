@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t('kiosk_thanks') }} – {{ t('app_name') }}{% endblock %}
+{% block content %}
+<div style="max-width:520px;margin:3rem auto;text-align:center;">
+  <div style="font-size:3.5rem;margin-bottom:1rem;">🙏</div>
+  <h1 style="font-family:var(--serif);font-size:2rem;color:var(--accent-dark);margin-bottom:0.5rem;">
+    {{ bi('kiosk_thanks')[0] }} · {{ bi('kiosk_thanks')[1] }}
+  </h1>
+  <p style="color:var(--muted);margin-bottom:0.35rem;">{{ bi('kiosk_thanks_sub')[0] }}</p>
+  <p style="color:var(--muted);font-family:var(--serif);margin-bottom:2rem;">{{ bi('kiosk_thanks_sub')[1] }}</p>
+  <a href="/kiosk" class="btn btn--outline">{{ bi('new_client')[0] }} / {{ bi('new_client')[1] }}</a>
+</div>
+{% endblock %}

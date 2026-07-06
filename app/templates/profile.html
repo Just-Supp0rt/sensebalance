@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}{{ t('profile_title') }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.form-title { text-align: center; margin: 0.5rem 0 0.75rem; }
+.form-title h1 { font-size: 1.7rem; font-weight: 800; }
+.form-title p { font-family: var(--serif); color: var(--muted); font-size: 1.2rem; }
+.hint { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem; }
+.choice-row { display: flex; gap: 0.6rem; }
+.choice-row--wrap { flex-wrap: wrap; }
+.choice-btn {
+  flex: 1;
+  min-width: 130px;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  min-height: 52px;
+  touch-action: manipulation;
+  transition: all 0.15s;
+  color: var(--text);
+}
+.choice-btn.active { border-color: var(--accent-dark); background: var(--accent); color: #fff; }
+.detail { display: none; }
+.detail.open { display: block; }
+.tag-btn {
+  padding: 0.55rem 1rem;
+  border-radius: 24px;
+  border: 2px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  min-height: 48px;
+  transition: all 0.15s;
+  touch-action: manipulation;
+  color: var(--text);
+}
+.tag-btn.active { border-color: var(--accent-dark); background: var(--accent); color: #fff; }
+.tag-wrap { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.translated-note {
+  margin-top: 0.75rem; background: #fff8e1; border-radius: 10px;
+  padding: 0.75rem; border: 1px solid #ffe082;
+}
+.translated-note span { font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+/* body map */
+.bodymap-wrap { display: flex; gap: 1rem; justify-content: center; background: #e7efe7; border-radius: var(--radius); padding: 1rem 0.5rem 0.25rem; }
+.bm-figure { flex: 1; max-width: 260px; text-align: center; margin: 0; }
+.bm-figure figcaption { font-weight: 700; font-size: 0.95rem; color: var(--muted); padding-bottom: 0.5rem; }
+.bm-zone > * { fill: #f6f0ea; stroke: #b9a4b2; stroke-width: 1.5; }
+.bm-zone { cursor: pointer; }
+.bm-zone.focus > * { fill: #81c784; stroke: var(--focus); }
+.bm-zone.avoid > * { fill: #e57373; stroke: var(--avoid); }
+.bm-ghost > * { fill: #eee6e0; stroke: #d5c8cf; stroke-width: 1; }
+.bm-legend { display: flex; gap: 1.5rem; justify-content: center; margin: 0.75rem 0; font-size: 0.9rem; color: var(--muted); }
+.bm-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 0.35rem; vertical-align: -2px; }
+.bm-dot--focus { background: #81c784; border: 2px solid var(--focus); }
+.bm-dot--avoid { background: #e57373; border: 2px solid var(--avoid); }
+.zone-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+.zone-chip {
+  padding: 0.45rem 0.85rem; border-radius: 20px; border: 2px solid var(--border);
+  background: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+  min-height: 44px; touch-action: manipulation; transition: all 0.15s; color: var(--text);
+}
+.zone-chip.focus { border-color: var(--focus); background: #e8f5e9; color: var(--focus); }
+.zone-chip.avoid { border-color: var(--avoid); background: #ffebee; color: var(--avoid); }
+/* consent */
+.consent-text { margin-bottom: 0.75rem; }
+.consent-check { display: flex; align-items: center; gap: 0.7rem; font-size: 1.1rem; margin: 0.75rem 0 1rem; cursor: pointer; }
+.consent-check input { width: 26px; height: 26px; accent-color: var(--accent-dark); }
+#sigPad {
+  width: 100%; height: 180px; border: 1.5px solid var(--border);
+  border-radius: 10px; background: #fff; touch-action: none; display: block;
+}
+.save-status { text-align: center; font-weight: 700; color: var(--focus); margin-top: 0.6rem; min-height: 1.5rem; }
+{% endblock %}
+{% block content %}
+
+{% include '_intake_form.html' %}
+
+{% if not kiosk %}
+<div class="card" style="border-color:#ffd6d6;">
+  <details>
+    <summary style="cursor:pointer;font-size:0.9rem;color:var(--muted);">{{ t('delete_account') }}</summary>
+    <div style="margin-top:0.75rem;">
+      <form method="post" action="/profile/delete"
+            onsubmit="return confirm('{{ t('delete_confirm') }}')">
+        <button type="submit" class="btn btn--danger">{{ t('delete_account') }}</button>
+      </form>
+    </div>
+  </details>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PROFILE = {{ profile | tojson }};
+const KIOSK = {{ 'true' if kiosk else 'false' }};
+const state = {
+  focusZones: new Set(PROFILE.focus_zones || []),
+  avoidZones: new Set(PROFILE.avoid_zones || []),
+  problemTags: new Set(PROFILE.problem_tags || []),
+  healthFlags: new Set(PROFILE.health_flags || []),
+  choices: {
+    has_health_problems: PROFILE.has_health_problems || '',
+    pregnancy: PROFILE.pregnancy || '',
+    blood_pressure: PROFILE.blood_pressure || '',
+    exercise: PROFILE.exercise || '',
+    recent_surgery: PROFILE.recent_surgery || '',
+    pressure: PROFILE.pressure || '',
+  },
+};
+
+// --- choices (yes/no & single-select rows) ---
+function setChoice(group, value) {
+  state.choices[group] = state.choices[group] === value ? '' : value;
+  renderChoices(group);
+}
+function renderChoices(group) {
+  const row = document.querySelector(`.choice-row[data-group="${group}"]`);
+  if (!row) return;
+  row.querySelectorAll('.choice-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.value === state.choices[group]));
+  const detail = document.getElementById('d-' + group);
+  if (detail) detail.classList.toggle('open', state.choices[group] === 'yes');
+}
+Object.keys(state.choices).forEach(renderChoices);
+
+// --- body map + chips ---
+function renderZones() {
+  document.querySelectorAll('.bm-zone, .zone-chip').forEach(el => {
+    const id = el.dataset.zone;
+    el.classList.toggle('focus', state.focusZones.has(id));
+    el.classList.toggle('avoid', state.avoidZones.has(id));
+  });
+}
+function cycleZone(id) {
+  if (state.focusZones.has(id)) { state.focusZones.delete(id); state.avoidZones.add(id); }
+  else if (state.avoidZones.has(id)) { state.avoidZones.delete(id); }
+  else { state.focusZones.add(id); }
+  renderZones();
+}
+document.querySelectorAll('.bm-zone').forEach(g => {
+  g.addEventListener('click', () => cycleZone(g.dataset.zone));
+});
+renderZones();
+
+// --- tag chips ---
+function toggleTag(btn, type) {
+  const id = btn.dataset.tag;
+  const set = type === 'problem' ? state.problemTags : state.healthFlags;
+  if (set.has(id)) { set.delete(id); btn.classList.remove('active'); }
+  else { set.add(id); btn.classList.add('active'); }
+}
+
+// --- signature pad ---
+const sigPad = document.getElementById('sigPad');
+const sigCtx = sigPad.getContext('2d');
+let sigDirty = false, sigDrawing = false;
+function sizeSigPad() {
+  const prev = sigDirty || PROFILE.signature_png ? sigPad.toDataURL() : null;
+  const ratio = window.devicePixelRatio || 1;
+  const w = sigPad.clientWidth, h = sigPad.clientHeight;
+  sigPad.width = w * ratio; sigPad.height = h * ratio;
+  sigCtx.scale(ratio, ratio);
+  sigCtx.lineWidth = 2.2; sigCtx.lineCap = 'round'; sigCtx.strokeStyle = '#3a2b33';
+  if (prev) { const img = new Image(); img.onload = () => sigCtx.drawImage(img, 0, 0, w, h); img.src = prev; }
+}
+sizeSigPad();
+if (PROFILE.signature_png) {
+  const img = new Image();
+  img.onload = () => { sigCtx.drawImage(img, 0, 0, sigPad.clientWidth, sigPad.clientHeight); sigDirty = true; };
+  img.src = PROFILE.signature_png;
+}
+function sigPos(e) {
+  const r = sigPad.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
+}
+sigPad.addEventListener('pointerdown', e => {
+  sigDrawing = true; sigDirty = true;
+  sigPad.setPointerCapture(e.pointerId);
+  const [x, y] = sigPos(e);
+  sigCtx.beginPath(); sigCtx.moveTo(x, y);
+});
+sigPad.addEventListener('pointermove', e => {
+  if (!sigDrawing) return;
+  const [x, y] = sigPos(e);
+  sigCtx.lineTo(x, y); sigCtx.stroke();
+});
+['pointerup', 'pointercancel'].forEach(ev =>
+  sigPad.addEventListener(ev, () => { sigDrawing = false; }));
+function clearSignature() {
+  sigCtx.clearRect(0, 0, sigPad.width, sigPad.height);
+  sigDirty = false;
+}
+
+// --- submit ---
+function collect() {
+  return {
+    name: document.getElementById('f-name').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    has_health_problems: state.choices.has_health_problems,
+    health_problems: state.choices.has_health_problems === 'yes'
+      ? document.getElementById('f-health_problems').value.trim() : '',
+    pregnancy: state.choices.pregnancy,
+    blood_pressure: state.choices.blood_pressure,
+    exercise: state.choices.exercise,
+    exercise_detail: state.choices.exercise === 'yes'
+      ? document.getElementById('f-exercise_detail').value.trim() : '',
+    recent_surgery: state.choices.recent_surgery,
+    surgery_detail: state.choices.recent_surgery === 'yes'
+      ? document.getElementById('f-surgery_detail').value.trim() : '',
+    pressure: state.choices.pressure || 'medium',
+    problem_tags: [...state.problemTags],
+    health_flags: [...state.healthFlags],
+    focus_zones: [...state.focusZones],
+    avoid_zones: [...state.avoidZones],
+    oil_allergies: document.getElementById('f-allergies').value.trim(),
+    note_original: document.getElementById('f-note').value.trim(),
+    consent: document.getElementById('f-consent').checked,
+    signature_png: sigDirty ? sigPad.toDataURL('image/png') : (PROFILE.signature_png || ''),
+  };
+}
+
+function showError(msg) {
+  const box = document.getElementById('formError');
+  box.textContent = msg;
+  box.style.display = msg ? 'block' : 'none';
+}
+
+async function submitForm() {
+  const data = collect();
+  showError('');
+  if (KIOSK && (!data.name || !data.email)) {
+    showError('{{ bi("name")[0] }} + {{ bi("email")[0] }} / {{ bi("name")[1] }} + {{ bi("email")[1] }}');
+    return;
+  }
+  if (KIOSK && (!data.consent || !data.signature_png)) {
+    showError('{{ bi("consent_required")[0] }} / {{ bi("consent_required")[1] }}');
+    return;
+  }
+  const btn = document.getElementById('submitBtn');
+  const status = document.getElementById('saveStatus');
+  btn.disabled = true;
+  status.textContent = '...';
+  try {
+    const r = await fetch(KIOSK ? '/kiosk' : '/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: 'body=' + encodeURIComponent(JSON.stringify(data)),
+    });
+    if (r.ok) {
+      if (KIOSK) { window.location = '/kiosk/done'; return; }
+      status.textContent = '✓ {{ t("saved") }}';
+      setTimeout(() => { location.reload(); }, 1200);
+    } else {
+      status.textContent = '';
+      showError('✗ Chyba / Error (' + r.status + ')');
+      btn.disabled = false;
+    }
+  } catch (e) {
+    status.textContent = '';
+    showError('✗ Offline');
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

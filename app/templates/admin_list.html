@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin_clients') }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.client-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  gap: 0.75rem;
+}
+.client-row:last-child { border-bottom: none; }
+.client-row:hover { background: var(--bg); margin: 0 -1.25rem; padding: 0.75rem 1.25rem; border-radius: 8px; }
+.client-email { font-size: 0.85rem; color: var(--muted); }
+.client-date { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.no-profile-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+.profile-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--focus); }
+{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.5rem;">
+  <h2 style="margin-bottom:0;">{{ t('admin_clients') }}</h2>
+  <form method="post" action="/admin/kiosk/start"
+        onsubmit="return confirm('{{ t('start_kiosk') }}? (odhlásí vás na tomto zařízení)')">
+    <button type="submit" class="btn btn--sm">📋 {{ t('start_kiosk') }}</button>
+  </form>
+</div>
+<form method="get" action="/admin" style="margin-bottom:1rem;display:flex;gap:0.5rem;">
+  <input type="text" name="q" value="{{ q }}" placeholder="{{ t('admin_search') }}..." style="flex:1;">
+  <button type="submit" class="btn btn--sm">🔍</button>
+</form>
+<div class="card" style="padding:0.5rem 1.25rem;">
+  {% if clients %}
+    {% for c in clients %}
+    <a href="/admin/client/{{ c.id }}" class="client-row">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {% if c.profile_updated %}<span class="profile-dot"></span>{% else %}<span class="no-profile-dot"></span>{% endif %}
+          &nbsp;{{ c.name or c.email }}
+        </div>
+        {% if c.name %}<div class="client-email">{{ c.email }}</div>{% endif %}
+      </div>
+      <div class="client-date">
+        {% if c.profile_updated %}{{ c.profile_updated[:10] }}{% else %}—{% endif %}
+      </div>
+      <span style="color:var(--muted);">›</span>
+    </a>
+    {% endfor %}
+  {% else %}
+    <p style="padding:1rem 0;color:var(--muted);text-align:center;">Žádní klienti</p>
+  {% endif %}
+</div>
+{% endblock %}

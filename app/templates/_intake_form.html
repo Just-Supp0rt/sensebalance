@@ -1,0 +1,162 @@
+{% macro qlabel(key) -%}
+<span class="q-label"><span class="q-cs">{{ bi(key)[0] }}</span><span class="q-en">{{ bi(key)[1] }}</span></span>
+{%- endmacro %}
+
+{% macro banner(key) -%}
+<div class="section-banner">{{ bi(key)[0] }} · <span class="en">{{ bi(key)[1] }}</span></div>
+{%- endmacro %}
+
+{% macro yesno(field) -%}
+<div class="choice-row" data-group="{{ field }}">
+  <button type="button" class="choice-btn" data-value="yes" onclick="setChoice('{{ field }}','yes')">{{ bi('yes')[0] }} / {{ bi('yes')[1] }}</button>
+  <button type="button" class="choice-btn" data-value="no" onclick="setChoice('{{ field }}','no')">{{ bi('no')[0] }} / {{ bi('no')[1] }}</button>
+</div>
+{%- endmacro %}
+
+<div class="form-title">
+  <h1>{{ bi('tagline')[0] }}</h1>
+  <p>{{ bi('tagline')[1] }}</p>
+</div>
+
+<!-- ===== Personal info ===== -->
+{{ banner('section_personal') }}
+<div class="card">
+  <div class="grid2">
+    <div>
+      {{ qlabel('name') }}
+      <input type="text" id="f-name" autocomplete="name"
+             value="{{ user.name if user and not kiosk else '' }}">
+    </div>
+    <div>
+      {{ qlabel('phone') }}
+      <input type="tel" id="f-phone" autocomplete="tel" value="{{ profile.phone }}">
+    </div>
+  </div>
+  {{ qlabel('email') }}
+  {% if kiosk %}
+  <input type="email" id="f-email" autocomplete="email" placeholder="vas@email.cz">
+  {% else %}
+  <input type="email" id="f-email" value="{{ user.email }}" readonly
+         style="background:var(--bg);color:var(--muted);">
+  {% endif %}
+</div>
+
+<!-- ===== Health status ===== -->
+{{ banner('section_health') }}
+<div class="card">
+  {{ qlabel('q_health_problems') }}
+  {{ yesno('has_health_problems') }}
+  <div class="detail" id="d-has_health_problems">
+    {{ qlabel('if_yes_specify') }}
+    <textarea id="f-health_problems" rows="2">{{ profile.health_problems }}</textarea>
+  </div>
+
+  {{ qlabel('q_pregnancy') }}
+  {{ yesno('pregnancy') }}
+
+  {{ qlabel('q_blood_pressure') }}
+  <div class="choice-row" data-group="blood_pressure">
+    <button type="button" class="choice-btn" data-value="high" onclick="setChoice('blood_pressure','high')">{{ bi('bp_high')[0] }} / {{ bi('bp_high')[1] }}</button>
+    <button type="button" class="choice-btn" data-value="low" onclick="setChoice('blood_pressure','low')">{{ bi('bp_low')[0] }} / {{ bi('bp_low')[1] }}</button>
+    <button type="button" class="choice-btn" data-value="normal" onclick="setChoice('blood_pressure','normal')">{{ bi('bp_normal')[0] }} / {{ bi('bp_normal')[1] }}</button>
+  </div>
+
+  {{ qlabel('other_conditions') }}
+  <div class="tag-wrap" id="healthFlags">
+    {% for flag in HEALTH_FLAGS %}
+    {% if not flag.legacy or flag.id in profile.health_flags %}
+    <button type="button" class="tag-btn {% if flag.id in profile.health_flags %}active{% endif %}"
+            data-tag="{{ flag.id }}" onclick="toggleTag(this, 'health')">
+      {{ flag.cs }} / {{ flag.en }}
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  {{ qlabel('allergies') }}
+  <textarea id="f-allergies" rows="2">{{ profile.oil_allergies }}</textarea>
+</div>
+
+<!-- ===== Lifestyle ===== -->
+{{ banner('section_lifestyle') }}
+<div class="card">
+  {{ qlabel('q_exercise') }}
+  {{ yesno('exercise') }}
+  <div class="detail" id="d-exercise">
+    {{ qlabel('q_exercise_detail') }}
+    <input type="text" id="f-exercise_detail" value="{{ profile.exercise_detail }}">
+  </div>
+
+  {{ qlabel('q_surgery') }}
+  {{ yesno('recent_surgery') }}
+  <div class="detail" id="d-recent_surgery">
+    {{ qlabel('if_yes_specify') }}
+    <input type="text" id="f-surgery_detail" value="{{ profile.surgery_detail }}">
+  </div>
+</div>
+
+<!-- ===== Massage preferences ===== -->
+{{ banner('section_preferences') }}
+<div class="card">
+  {{ qlabel('q_pressure') }}
+  <div class="choice-row choice-row--wrap" data-group="pressure">
+    {% for p in ['very_light', 'light', 'medium', 'strong'] %}
+    <button type="button" class="choice-btn" data-value="{{ p }}" onclick="setChoice('pressure','{{ p }}')">
+      {{ bi('pressure_' + p)[0] }} / {{ bi('pressure_' + p)[1] }}
+    </button>
+    {% endfor %}
+  </div>
+
+  {{ qlabel('problems') }}
+  <div class="tag-wrap" id="problemTags">
+    {% for tag in PROBLEM_TAGS %}
+    <button type="button" class="tag-btn {% if tag.id in profile.problem_tags %}active{% endif %}"
+            data-tag="{{ tag.id }}" onclick="toggleTag(this, 'problem')">
+      {{ tag.cs }} / {{ tag.en }}
+    </button>
+    {% endfor %}
+  </div>
+
+  {{ qlabel('note') }}
+  <textarea id="f-note" rows="3" placeholder="{{ bi('note_hint')[0] }} / {{ bi('note_hint')[1] }}">{{ profile.note_original }}</textarea>
+  {% if profile.note_th and not kiosk %}
+  <div class="translated-note">
+    <span>{{ t('translated_badge') }}</span>
+    <p>{{ profile.note_th }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== Body map ===== -->
+{{ banner('section_bodymap') }}
+<div class="card">
+  {{ qlabel('bodymap_title') }}
+  <p class="hint">{{ bi('bodymap_help')[0] }}<br>{{ bi('bodymap_help')[1] }}</p>
+  {% include '_bodymap.html' %}
+</div>
+
+<!-- ===== Consent ===== -->
+{{ banner('section_consent') }}
+<div class="card">
+  <p class="consent-text">{{ bi('consent_text')[0] }}</p>
+  <p class="consent-text q-en">{{ bi('consent_text')[1] }}</p>
+
+  <label class="consent-check">
+    <input type="checkbox" id="f-consent" {% if profile.consent_at %}checked{% endif %}>
+    <span>{{ bi('agree')[0] }} / {{ bi('agree')[1] }}</span>
+  </label>
+
+  {{ qlabel('signature') }}
+  <canvas id="sigPad" width="640" height="200"></canvas>
+  <div style="display:flex;justify-content:flex-end;margin-top:0.4rem;">
+    <button type="button" class="btn btn--outline btn--sm" onclick="clearSignature()">
+      {{ bi('clear')[0] }} / {{ bi('clear')[1] }}
+    </button>
+  </div>
+
+  <div id="formError" class="flash error" style="display:none;margin-top:0.9rem;"></div>
+  <button type="button" class="btn btn--full" style="margin-top:1rem;" id="submitBtn" onclick="submitForm()">
+    {% if kiosk %}{{ bi('submit_form')[0] }} / {{ bi('submit_form')[1] }}{% else %}{{ bi('save')[0] }} / {{ bi('save')[1] }}{% endif %}
+  </button>
+  <div id="saveStatus" class="save-status"></div>
+</div>

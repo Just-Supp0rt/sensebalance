@@ -1,0 +1,74 @@
+<div class="bodymap-wrap">
+  <figure class="bm-figure">
+    <svg viewBox="0 0 200 380" role="img" aria-label="{{ bi('body_front')[0] }}">
+      <g class="bm-zone" data-zone="head"><ellipse cx="100" cy="30" rx="20" ry="24"/></g>
+      <g class="bm-zone" data-zone="neck"><rect x="90" y="54" width="20" height="14" rx="6"/></g>
+      <g class="bm-zone" data-zone="shoulder_r"><ellipse cx="60" cy="82" rx="18" ry="12"/></g>
+      <g class="bm-zone" data-zone="shoulder_l"><ellipse cx="140" cy="82" rx="18" ry="12"/></g>
+      <g class="bm-zone" data-zone="chest"><rect x="72" y="72" width="56" height="44" rx="10"/></g>
+      <g class="bm-zone" data-zone="abdomen"><rect x="74" y="118" width="52" height="46" rx="10"/></g>
+      <g class="bm-zone" data-zone="arms">
+        <rect x="40" y="96" width="17" height="86" rx="8"/>
+        <rect x="143" y="96" width="17" height="86" rx="8"/>
+      </g>
+      <g class="bm-zone" data-zone="hands">
+        <ellipse cx="48" cy="196" rx="10" ry="13"/>
+        <ellipse cx="152" cy="196" rx="10" ry="13"/>
+      </g>
+      <g class="bm-zone" data-zone="quads">
+        <rect x="74" y="168" width="24" height="80" rx="11"/>
+        <rect x="102" y="168" width="24" height="80" rx="11"/>
+      </g>
+      <g class="bm-zone" data-zone="calves">
+        <rect x="77" y="254" width="20" height="74" rx="9"/>
+        <rect x="103" y="254" width="20" height="74" rx="9"/>
+      </g>
+      <g class="bm-zone" data-zone="feet">
+        <ellipse cx="86" cy="344" rx="13" ry="12"/>
+        <ellipse cx="114" cy="344" rx="13" ry="12"/>
+      </g>
+    </svg>
+    <figcaption>{{ bi('body_front')[0] }} · <span class="q-en" style="display:inline;">{{ bi('body_front')[1] }}</span></figcaption>
+  </figure>
+
+  <figure class="bm-figure">
+    <svg viewBox="0 0 200 380" role="img" aria-label="{{ bi('body_back')[0] }}">
+      <g class="bm-ghost">
+        <ellipse cx="100" cy="30" rx="20" ry="24"/>
+        <rect x="90" y="54" width="20" height="14" rx="6"/>
+        <rect x="40" y="96" width="17" height="86" rx="8"/>
+        <rect x="143" y="96" width="17" height="86" rx="8"/>
+        <ellipse cx="48" cy="196" rx="10" ry="13"/>
+        <ellipse cx="152" cy="196" rx="10" ry="13"/>
+        <rect x="77" y="290" width="20" height="38" rx="9"/>
+        <rect x="103" y="290" width="20" height="38" rx="9"/>
+        <ellipse cx="86" cy="344" rx="13" ry="12"/>
+        <ellipse cx="114" cy="344" rx="13" ry="12"/>
+      </g>
+      <g class="bm-zone" data-zone="upper_back"><rect x="70" y="72" width="60" height="48" rx="10"/></g>
+      <g class="bm-zone" data-zone="lower_back"><rect x="74" y="122" width="52" height="42" rx="10"/></g>
+      <g class="bm-zone" data-zone="glutes">
+        <ellipse cx="87" cy="180" rx="15" ry="15"/>
+        <ellipse cx="113" cy="180" rx="15" ry="15"/>
+      </g>
+      <g class="bm-zone" data-zone="hamstrings">
+        <rect x="74" y="200" width="24" height="84" rx="11"/>
+        <rect x="102" y="200" width="24" height="84" rx="11"/>
+      </g>
+    </svg>
+    <figcaption>{{ bi('body_back')[0] }} · <span class="q-en" style="display:inline;">{{ bi('body_back')[1] }}</span></figcaption>
+  </figure>
+</div>
+
+<div class="bm-legend">
+  <span class="bm-key"><span class="bm-dot bm-dot--focus"></span>{{ bi('body_map_focus')[0] }} / {{ bi('body_map_focus')[1] }}</span>
+  <span class="bm-key"><span class="bm-dot bm-dot--avoid"></span>{{ bi('body_map_avoid')[0] }} / {{ bi('body_map_avoid')[1] }}</span>
+</div>
+
+<div class="zone-chips" id="zoneChips">
+  {% for zone in BODY_ZONES %}
+  <button type="button" class="zone-chip" data-zone="{{ zone.id }}" onclick="cycleZone('{{ zone.id }}')">
+    {{ zone.cs }} / {{ zone.en }}
+  </button>
+  {% endfor %}
+</div>
