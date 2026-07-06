@@ -42,5 +42,11 @@ jobs:
 
       - name: Mirror to Forgejo (backup)
         if: success()
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
-          git push --force "http://portes:${{ secrets.FORGEJO_TOKEN }}@192.168.1.159:3000/portes/sensebalance.git" main
+          if [ -z "$FORGEJO_TOKEN" ]; then
+            echo "FORGEJO_TOKEN secret not set — skipping backup mirror"
+            exit 0
+          fi
+          git push --force "http://portes:${FORGEJO_TOKEN}@192.168.1.159:3000/portes/sensebalance.git" main
