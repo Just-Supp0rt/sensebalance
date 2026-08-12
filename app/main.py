@@ -237,3 +237,30 @@ async def admin_client_detail(request: Request, user_id: int):
             "t_loc": lambda k: i18n_t(lang, k),
         },
     )
+
+
+@app.get("/admin/client/{user_id}/visit/{visit_id}", response_class=HTMLResponse)
+async def admin_visit_detail(request: Request, user_id: int, visit_id: int):
+    redir = _require_admin(request)
+    if redir:
+        return redir
+    db = get_db()
+    client = db.get_user_by_id(user_id)
+    visit = db.get_visit(visit_id)
+    if not client or not visit or visit["user_id"] != user_id:
+        return RedirectResponse("/admin", status_code=302)
+    snapshot = json.loads(visit["snapshot"])
+    lang = request.query_params.get("lang", "th")
+    if lang not in ("cs", "en", "th"):
+        lang = "th"
+    return _resp(
+        request,
+        "admin_visit_detail.html",
+        {
+            "client": client,
+            "visit": visit,
+            "profile": snapshot,
+            "lang": lang,
+            "t_loc": lambda k: i18n_t(lang, k),
+        },
+    )

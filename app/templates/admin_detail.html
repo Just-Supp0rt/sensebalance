@@ -65,15 +65,17 @@
 
 {% include '_profile_detail.html' %}
 
-<!-- Visit history — append-only, proves what was signed and when -->
+<!-- Visit history — append-only, proves what was signed and when. Each row
+     opens that visit's own full snapshot, unchanged by later edits. -->
 {% if visits %}
 <div class="card">
   <h2>🗂️ {{ t_loc('recap_last_visit') }}</h2>
   {% for v in visits %}
-  <div class="visit-row">
-    <div class="visit-kind">{{ '🆕' if v.kind == 'first' else '↩️' }} {{ v.kind }}</div>
+  <a class="visit-row" href="/admin/client/{{ client.id }}/visit/{{ v.id }}?lang={{ loc }}"
+     style="display:block;text-decoration:none;color:inherit;">
+    <div class="visit-kind">{{ '🆕' if v.kind == 'first' else '↩️' }} {{ v.kind }} <span style="color:var(--muted);font-weight:400;">›</span></div>
     <div class="visit-date">{{ v.created_at[:16] | replace('T',' ') }} · GDPR ✓ {{ v.consent_at[:16] | replace('T',' ') }}</div>
-  </div>
+  </a>
   {% endfor %}
 </div>
 {% endif %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set loc = lang or 'th' %}
+{% block title %}{{ client.name or client.email }} · {{ visit.created_at[:10] }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.zone-pill, .flag-pill {
+  display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.75rem;
+  border-radius: 20px; font-size: 0.9rem; font-weight: 700; margin: 0.2rem;
+}
+.zone-focus { background: #e8f5e9; color: var(--focus); border: 1.5px solid #a5d6a7; }
+.zone-avoid { background: #ffebee; color: var(--avoid); border: 1.5px solid #ef9a9a; }
+.flag-pill { background: #fff3e0; border: 1.5px solid #ffe0b2; color: #e65100; }
+.lang-switch { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.lang-switch a {
+  padding: 0.35rem 0.9rem; border-radius: 20px; border: 1.5px solid var(--border);
+  text-decoration: none; color: var(--muted); font-weight: 700; font-size: 0.85rem;
+}
+.lang-switch a.active { background: var(--accent); color: #fff; border-color: var(--accent-dark); }
+{% endblock %}
+{% block content %}
+<div style="margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;">
+  <a href="/admin/client/{{ client.id }}?lang={{ loc }}" style="color:var(--muted);font-size:0.9rem;">‹ {{ client.name or client.email }}</a>
+  <div class="lang-switch">
+    <a href="?lang=cs" class="{% if loc == 'cs' %}active{% endif %}">CZ</a>
+    <a href="?lang=en" class="{% if loc == 'en' %}active{% endif %}">EN</a>
+    <a href="?lang=th" class="{% if loc == 'th' %}active{% endif %}">TH</a>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-size:1.2rem;font-weight:800;">{{ '🆕' if visit.kind == 'first' else '↩️' }} {{ visit.kind }}</div>
+  <div style="color:var(--muted);font-size:0.85rem;">{{ visit.created_at[:16] | replace('T',' ') }}</div>
+</div>
+
+{% include '_profile_detail.html' %}
+{% endblock %}
