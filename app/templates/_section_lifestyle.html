@@ -1,0 +1,17 @@
+{% from "_form_macros.html" import qlabel, banner, yesno with context %}
+{{ banner('section_lifestyle') }}
+<div class="card">
+  {{ qlabel('q_exercise') }}
+  {{ yesno('exercise') }}
+  <div class="detail" id="d-exercise">
+    {{ qlabel('q_exercise_detail') }}
+    <input type="text" id="f-exercise_detail" value="{{ profile.exercise_detail }}">
+  </div>
+
+  {{ qlabel('q_surgery') }}
+  {{ yesno('recent_surgery') }}
+  <div class="detail" id="d-recent_surgery">
+    {{ qlabel('if_yes_specify') }}
+    <input type="text" id="f-surgery_detail" value="{{ profile.surgery_detail }}">
+  </div>
+</div>

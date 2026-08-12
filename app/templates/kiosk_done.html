@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ t('kiosk_thanks') }} – {{ t('app_name') }}{% endblock %}
 {% block content %}
+<meta http-equiv="refresh" content="60;url=/kiosk">
 <div style="max-width:520px;margin:3rem auto;text-align:center;">
   <div style="font-size:3.5rem;margin-bottom:1rem;">🙏</div>
   <h1 style="font-family:var(--serif);font-size:2rem;color:var(--accent-dark);margin-bottom:0.5rem;">
@@ -9,5 +10,11 @@
   <p style="color:var(--muted);margin-bottom:0.35rem;">{{ bi('kiosk_thanks_sub')[0] }}</p>
   <p style="color:var(--muted);font-family:var(--serif);margin-bottom:2rem;">{{ bi('kiosk_thanks_sub')[1] }}</p>
   <a href="/kiosk" class="btn btn--outline">{{ bi('new_client')[0] }} / {{ bi('new_client')[1] }}</a>
+  <div style="margin-top:0.75rem;">
+    <a href="/kiosk/last" style="color:var(--muted);font-size:0.85rem;">🧑‍⚕️ {{ bi('staff_button')[0] }} / {{ bi('staff_button')[1] }}</a>
+  </div>
 </div>
+<script>
+setTimeout(function () { window.location = '/kiosk'; }, 60000);
+</script>
 {% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ bi('tagline')[0] }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+{% include '_intake_style.html' %}
+{% endblock %}
+{% block content %}
+{% include '_intake_form.html' %}
+{% endblock %}
+{% block scripts %}
+<script>
+window.INTAKE_CONFIG = {
+  profile: {{ profile | tojson }},
+  kiosk: true,
+  submitUrl: '/kiosk/new',
+  requirePin: true,
+  successRedirect: '/kiosk/done',
+  trackChangedSections: false,
+};
+window.INTAKE_STRINGS = {
+  missing_name_email: '{{ bi("name")[0] }} + {{ bi("email")[0] }} / {{ bi("name")[1] }} + {{ bi("email")[1] }}',
+  consent_required: '{{ bi("consent_required")[0] }} / {{ bi("consent_required")[1] }}',
+  pin_invalid: '{{ bi("pin_invalid")[0] }} / {{ bi("pin_invalid")[1] }}',
+  pin_mismatch: '{{ bi("pin_mismatch")[0] }} / {{ bi("pin_mismatch")[1] }}',
+  saved: '{{ t("saved") }}',
+};
+</script>
+<script src="/static/intake.js"></script>
+{% endblock %}

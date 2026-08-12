@@ -1,0 +1,14 @@
+{% macro qlabel(key) -%}
+<span class="q-label"><span class="q-cs">{{ bi(key)[0] }}</span><span class="q-en">{{ bi(key)[1] }}</span></span>
+{%- endmacro %}
+
+{% macro banner(key) -%}
+<div class="section-banner">{{ bi(key)[0] }} · <span class="en">{{ bi(key)[1] }}</span></div>
+{%- endmacro %}
+
+{% macro yesno(field) -%}
+<div class="choice-row" data-group="{{ field }}">
+  <button type="button" class="choice-btn" data-value="yes" onclick="setChoice('{{ field }}','yes')">{{ bi('yes')[0] }} / {{ bi('yes')[1] }}</button>
+  <button type="button" class="choice-btn" data-value="no" onclick="setChoice('{{ field }}','no')">{{ bi('no')[0] }} / {{ bi('no')[1] }}</button>
+</div>
+{%- endmacro %}

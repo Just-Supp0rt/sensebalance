@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "_form_macros.html" import qlabel, banner with context %}
+{% block title %}{{ bi('recap_title')[0] }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+{% include '_intake_style.html' %}
+{% endblock %}
+{% block content %}
+
+<div class="form-title">
+  <h1>{{ bi('recap_title')[0] }}</h1>
+  <p>{{ bi('recap_title')[1] }}</p>
+</div>
+
+<div class="card recap-card">
+  {% if last_visit_at %}
+  <div class="recap-row"><span class="k">{{ bi('recap_last_visit')[0] }} / {{ bi('recap_last_visit')[1] }}</span>
+    <span class="v">{{ last_visit_at[:10] }}</span></div>
+  {% endif %}
+  <div class="recap-row"><span class="k">{{ bi('pressure')[0] }} / {{ bi('pressure')[1] }}</span>
+    <span class="v">{{ bi('pressure_' + profile.pressure)[0] if profile.pressure else '—' }}</span></div>
+  {% if profile.focus_zones %}
+  <div class="recap-row"><span class="k">{{ bi('body_map_focus')[0] }}</span>
+    <span class="v">{% for zid in profile.focus_zones %}{% for z in BODY_ZONES %}{% if z.id == zid %}{{ z.cs }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}{% endfor %}</span></div>
+  {% endif %}
+  {% if profile.avoid_zones %}
+  <div class="recap-row"><span class="k">{{ bi('body_map_avoid')[0] }}</span>
+    <span class="v">{% for zid in profile.avoid_zones %}{% for z in BODY_ZONES %}{% if z.id == zid %}{{ z.cs }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}{% endfor %}</span></div>
+  {% endif %}
+  {% if profile.problem_tags %}
+  <div class="recap-row"><span class="k">{{ bi('problems')[0] }}</span>
+    <span class="v">{% for tid in profile.problem_tags %}{% for tag in PROBLEM_TAGS %}{% if tag.id == tid %}{{ tag.cs }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}{% endfor %}</span></div>
+  {% endif %}
+</div>
+
+<div class="card">
+  {{ qlabel('edit_prompt') }}
+  <div class="tile-grid">
+    <button type="button" class="tile-toggle" data-target="tile-health" data-section="health">
+      {{ bi('tile_health')[0] }} / {{ bi('tile_health')[1] }}
+    </button>
+    <button type="button" class="tile-toggle" data-target="tile-lifestyle" data-section="lifestyle">
+      {{ bi('tile_lifestyle')[0] }} / {{ bi('tile_lifestyle')[1] }}
+    </button>
+    <button type="button" class="tile-toggle" data-target="tile-preferences" data-section="preferences">
+      {{ bi('tile_preferences')[0] }} / {{ bi('tile_preferences')[1] }}
+    </button>
+    <button type="button" class="tile-toggle" data-target="tile-bodymap" data-section="bodymap">
+      {{ bi('tile_bodymap')[0] }} / {{ bi('tile_bodymap')[1] }}
+    </button>
+  </div>
+</div>
+
+<div id="tile-health" class="tile">{% include '_section_health.html' %}</div>
+<div id="tile-lifestyle" class="tile">{% include '_section_lifestyle.html' %}</div>
+<div id="tile-preferences" class="tile">{% include '_section_preferences.html' %}</div>
+<div id="tile-bodymap" class="tile">{% include '_section_bodymap.html' %}</div>
+
+<!-- ===== Consent — always required, even with no changes ===== -->
+{{ banner('section_consent') }}
+<div class="card" id="consentCard">
+  <p class="consent-text">{{ bi('consent_text')[0] }}</p>
+  <p class="consent-text q-en">{{ bi('consent_text')[1] }}</p>
+
+  <label class="consent-check">
+    <input type="checkbox" id="f-consent" checked>
+    <span>{{ bi('agree')[0] }} / {{ bi('agree')[1] }}</span>
+  </label>
+
+  {{ qlabel('signature') }}
+  <canvas id="sigPad" width="640" height="200"></canvas>
+  <div style="display:flex;justify-content:flex-end;margin-top:0.4rem;">
+    <button type="button" class="btn btn--outline btn--sm" onclick="clearSignature()">
+      {{ bi('clear')[0] }} / {{ bi('clear')[1] }}
+    </button>
+  </div>
+
+  <div id="formError" class="flash error" style="display:none;margin-top:0.9rem;"></div>
+  <button type="button" class="btn btn--full" style="margin-top:1rem;" id="submitBtn" onclick="submitForm()">
+    {{ bi('update_submit')[0] }} / {{ bi('update_submit')[1] }}
+  </button>
+  <div id="saveStatus" class="save-status"></div>
+</div>
+
+<!-- hidden fields the form partials reference for name/phone/email so collect() works unchanged -->
+<div style="display:none;">
+  <input type="text" id="f-name" value="{{ client_name }}">
+  <input type="tel" id="f-phone" value="{{ profile.phone }}">
+  <input type="email" id="f-email" value="{{ client_email }}">
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.INTAKE_CONFIG = {
+  profile: {{ profile | tojson }},
+  kiosk: true,
+  submitUrl: '/kiosk/update',
+  requirePin: false,
+  successRedirect: '/kiosk/done',
+  trackChangedSections: true,
+};
+window.INTAKE_STRINGS = {
+  missing_name_email: '',
+  consent_required: '{{ bi("consent_required")[0] }} / {{ bi("consent_required")[1] }}',
+  pin_invalid: '',
+  pin_mismatch: '',
+  saved: '{{ t("saved") }}',
+};
+</script>
+<script src="/static/intake.js"></script>
+{% endblock %}

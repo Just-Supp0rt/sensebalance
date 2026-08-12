@@ -12,6 +12,11 @@ GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
+# 4-digit PIN the therapist enters on the kiosk to preview the last submission.
+STAFF_PIN = os.getenv("STAFF_PIN", "")
+
+DEV = os.getenv("DEV", "") == "1"
+
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://192.168.1.159:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 
