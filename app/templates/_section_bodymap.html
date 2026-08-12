@@ -1,0 +1,7 @@
+{% from "_form_macros.html" import qlabel, banner with context %}
+{{ banner('section_bodymap') }}
+<div class="card">
+  {{ qlabel('bodymap_title') }}
+  <p class="hint">{{ bi('bodymap_help')[0] }}<br>{{ bi('bodymap_help')[1] }}</p>
+  {% include '_bodymap.html' %}
+</div>

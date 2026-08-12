@@ -1,0 +1,31 @@
+{% from "_form_macros.html" import qlabel, banner with context %}
+{{ banner('section_preferences') }}
+<div class="card">
+  {{ qlabel('q_pressure') }}
+  <div class="choice-row choice-row--wrap" data-group="pressure">
+    {% for p in ['very_light', 'light', 'medium', 'strong'] %}
+    <button type="button" class="choice-btn" data-value="{{ p }}" onclick="setChoice('pressure','{{ p }}')">
+      {{ bi('pressure_' + p)[0] }} / {{ bi('pressure_' + p)[1] }}
+    </button>
+    {% endfor %}
+  </div>
+
+  {{ qlabel('problems') }}
+  <div class="tag-wrap" id="problemTags">
+    {% for tag in PROBLEM_TAGS %}
+    <button type="button" class="tag-btn {% if tag.id in profile.problem_tags %}active{% endif %}"
+            data-tag="{{ tag.id }}" onclick="toggleTag(this, 'problem')">
+      {{ tag.cs }} / {{ tag.en }}
+    </button>
+    {% endfor %}
+  </div>
+
+  {{ qlabel('note') }}
+  <textarea id="f-note" rows="3" placeholder="{{ bi('note_hint')[0] }} / {{ bi('note_hint')[1] }}">{{ profile.note_original }}</textarea>
+  {% if profile.note_th and not kiosk %}
+  <div class="translated-note">
+    <span>{{ t('translated_badge') }}</span>
+    <p>{{ profile.note_th }}</p>
+  </div>
+  {% endif %}
+</div>

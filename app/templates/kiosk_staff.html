@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set loc = lang or 'th' %}
+{% block title %}{{ t_loc('staff_view_title') }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.zone-pill, .flag-pill {
+  display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.75rem;
+  border-radius: 20px; font-size: 0.9rem; font-weight: 700; margin: 0.2rem;
+}
+.zone-focus { background: #e8f5e9; color: var(--focus); border: 1.5px solid #a5d6a7; }
+.zone-avoid { background: #ffebee; color: var(--avoid); border: 1.5px solid #ef9a9a; }
+.flag-pill { background: #fff3e0; border: 1.5px solid #ffe0b2; color: #e65100; }
+.lang-switch { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.lang-switch a {
+  padding: 0.35rem 0.9rem; border-radius: 20px; border: 1.5px solid var(--border);
+  text-decoration: none; color: var(--muted); font-weight: 700; font-size: 0.85rem;
+}
+.lang-switch a.active { background: var(--accent); color: #fff; border-color: var(--accent-dark); }
+{% endblock %}
+{% block content %}
+
+{% if not unlocked %}
+<div class="form-title" style="margin-top:1rem;">
+  <h1>{{ bi('staff_button')[0] }}</h1>
+  <p>{{ bi('staff_button')[1] }}</p>
+</div>
+<div class="card" style="max-width:420px;margin:0 auto;">
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+  <form method="post" action="/kiosk/last">
+    <label>{{ bi('staff_pin_label')[0] }} / {{ bi('staff_pin_label')[1] }}</label>
+    <input type="text" name="pin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+           autocomplete="off" required autofocus>
+    <button type="submit" class="btn btn--full" style="margin-top:1rem;">{{ bi('return_submit')[0] }} / {{ bi('return_submit')[1] }}</button>
+  </form>
+  <div style="text-align:center;margin-top:1rem;">
+    <a href="/kiosk" style="color:var(--muted);font-size:0.9rem;">‹ {{ bi('back_to_kiosk')[0] }}</a>
+  </div>
+</div>
+
+{% else %}
+<div style="margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;">
+  <a href="/kiosk" style="color:var(--muted);font-size:0.9rem;">‹ {{ t_loc('back_to_kiosk') }}</a>
+  <div class="lang-switch">
+    <a href="?lang=cs" class="{% if loc == 'cs' %}active{% endif %}">CZ</a>
+    <a href="?lang=en" class="{% if loc == 'en' %}active{% endif %}">EN</a>
+    <a href="?lang=th" class="{% if loc == 'th' %}active{% endif %}">TH</a>
+  </div>
+</div>
+
+{% if not visit %}
+<div class="card"><p style="color:var(--muted);">{{ t_loc('no_profile') }}</p></div>
+{% else %}
+<div class="card">
+  <div style="font-size:1.2rem;font-weight:800;">{{ client.name or client.email }}</div>
+  <div style="color:var(--muted);font-size:0.85rem;">{{ visit.created_at[:16] | replace('T',' ') }}</div>
+</div>
+{% set profile = snapshot %}
+{% include '_profile_detail.html' %}
+{% endif %}
+{% endif %}
+
+{% endblock %}

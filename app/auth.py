@@ -1,13 +1,13 @@
 """Session tokens (itsdangerous) + magic link tokens (secrets) + Gmail send."""
 from __future__ import annotations
 
+import logging
 import secrets
 import smtplib
-import logging
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 
-from itsdangerous import URLSafeTimedSerializer, BadSignature
+from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 from app import config
 
@@ -47,6 +47,59 @@ def verify_kiosk_token(token: str) -> int | None:
     try:
         data = _get_signer().loads(token, salt="kiosk", max_age=KIOSK_TTL_SECONDS)
         return data["kiosk_by"]
+    except (BadSignature, Exception):
+        return None
+
+
+# Short-lived token proving a kiosk-return client just passed the identifier+PIN
+# check. Deliberately separate from sb_session (30 days) — this must not survive
+# past the single update the client is doing right now.
+CLIENT_TTL_SECONDS = 15 * 60
+
+
+def make_client_token(user_id: int) -> str:
+    return _get_signer().dumps({"uid": user_id}, salt="client")
+
+
+def verify_client_token(token: str) -> int | None:
+    try:
+        data = _get_signer().loads(token, salt="client", max_age=CLIENT_TTL_SECONDS)
+        return data["uid"]
+    except (BadSignature, Exception):
+        return None
+
+
+# Staff (therapist) unlock for the kiosk "show me the last submission" screen.
+STAFF_TTL_SECONDS = 15 * 60
+
+
+def make_staff_token() -> str:
+    return _get_signer().dumps({"staff": True}, salt="staff")
+
+
+def verify_staff_token(token: str) -> bool:
+    try:
+        data = _get_signer().loads(token, salt="staff", max_age=STAFF_TTL_SECONDS)
+        return bool(data.get("staff"))
+    except (BadSignature, Exception):
+        return False
+
+
+# Records which visit a kiosk device just submitted, so the staff preview can
+# only ever show "the visit that just happened here" — not an arbitrary id.
+# Longer-lived than the staff unlock itself: the therapist may not check the
+# tablet for a while after the client leaves.
+LAST_VISIT_TTL_SECONDS = 3600
+
+
+def make_last_visit_token(visit_id: int) -> str:
+    return _get_signer().dumps({"visit_id": visit_id}, salt="last_visit")
+
+
+def verify_last_visit_token(token: str) -> int | None:
+    try:
+        data = _get_signer().loads(token, salt="last_visit", max_age=LAST_VISIT_TTL_SECONDS)
+        return data["visit_id"]
     except (BadSignature, Exception):
         return None
 

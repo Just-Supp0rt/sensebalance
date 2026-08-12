@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ bi('welcome_returning')[0] }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.return-wrap { max-width: 460px; margin: 2rem auto; }
+{% endblock %}
+{% block content %}
+<div class="form-title">
+  <h1>{{ bi('welcome_returning')[0] }}</h1>
+  <p>{{ bi('welcome_returning')[1] }}</p>
+</div>
+<div class="return-wrap card">
+  {% if error %}
+  <div class="flash error">{{ error }}</div>
+  {% endif %}
+  <form method="post" action="/kiosk/return">
+    <label>{{ bi('identifier_label')[0] }} / {{ bi('identifier_label')[1] }}</label>
+    <input type="text" name="identifier" autocomplete="off" required>
+    <label style="margin-top:0.9rem;">{{ bi('pin_label')[0] }} / {{ bi('pin_label')[1] }}</label>
+    <input type="text" name="pin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+           autocomplete="off" required>
+    <button type="submit" class="btn btn--full" style="margin-top:1.2rem;">
+      {{ bi('return_submit')[0] }} / {{ bi('return_submit')[1] }}
+    </button>
+  </form>
+  <div style="text-align:center;margin-top:1rem;">
+    <a href="/kiosk" style="color:var(--muted);font-size:0.9rem;">‹ {{ bi('welcome_title')[0] }}</a>
+  </div>
+</div>
+{% endblock %}

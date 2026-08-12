@@ -1,0 +1,35 @@
+{% from "_form_macros.html" import qlabel, banner, yesno with context %}
+{{ banner('section_health') }}
+<div class="card">
+  {{ qlabel('q_health_problems') }}
+  {{ yesno('has_health_problems') }}
+  <div class="detail" id="d-has_health_problems">
+    {{ qlabel('if_yes_specify') }}
+    <textarea id="f-health_problems" rows="2">{{ profile.health_problems }}</textarea>
+  </div>
+
+  {{ qlabel('q_pregnancy') }}
+  {{ yesno('pregnancy') }}
+
+  {{ qlabel('q_blood_pressure') }}
+  <div class="choice-row" data-group="blood_pressure">
+    <button type="button" class="choice-btn" data-value="high" onclick="setChoice('blood_pressure','high')">{{ bi('bp_high')[0] }} / {{ bi('bp_high')[1] }}</button>
+    <button type="button" class="choice-btn" data-value="low" onclick="setChoice('blood_pressure','low')">{{ bi('bp_low')[0] }} / {{ bi('bp_low')[1] }}</button>
+    <button type="button" class="choice-btn" data-value="normal" onclick="setChoice('blood_pressure','normal')">{{ bi('bp_normal')[0] }} / {{ bi('bp_normal')[1] }}</button>
+  </div>
+
+  {{ qlabel('other_conditions') }}
+  <div class="tag-wrap" id="healthFlags">
+    {% for flag in HEALTH_FLAGS %}
+    {% if not flag.legacy or flag.id in profile.health_flags %}
+    <button type="button" class="tag-btn {% if flag.id in profile.health_flags %}active{% endif %}"
+            data-tag="{{ flag.id }}" onclick="toggleTag(this, 'health')">
+      {{ flag.cs }} / {{ flag.en }}
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  {{ qlabel('allergies') }}
+  <textarea id="f-allergies" rows="2">{{ profile.oil_allergies }}</textarea>
+</div>

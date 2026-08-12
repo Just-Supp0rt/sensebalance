@@ -8,16 +8,30 @@ from authlib.integrations.starlette_client import OAuth
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import auth, config
-from app.db import DB
-from app.i18n import BODY_ZONES, HEALTH_FLAGS, PROBLEM_TAGS, bi, t, zone_label
-from app.translate import translate_to_thai
+from app.deps import (
+    _current_user_id,
+    _profile_to_dict,
+    _require_admin,
+    _resp,
+    get_db,
+)
+from app.i18n import t as i18n_t
+from app.routes.kiosk import router as kiosk_router
+from app.translate import translate
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
+
+if config.SECRET_KEY == "dev-secret-change-in-prod" and not config.DEV:
+    raise RuntimeError(
+        "SECRET_KEY is at its insecure default. The kiosk return flow, staff "
+        "preview, and login sessions are all signed with this key — anyone who "
+        "knows the default can forge a cookie and read another client's health "
+        "data. Set SECRET_KEY in the environment, or set DEV=1 for local dev."
+    )
 
 app = FastAPI(title="Sense Balance")
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY)
@@ -26,16 +40,7 @@ app.mount(
     StaticFiles(directory=str(Path(__file__).parent / "static")),
     name="static",
 )
-templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
-
-_db: DB | None = None
-
-
-def get_db() -> DB:
-    global _db
-    if _db is None:
-        _db = DB(config.DB_PATH)
-    return _db
+app.include_router(kiosk_router)
 
 
 # Google OAuth
@@ -50,49 +55,6 @@ oauth.register(
 
 
 # --- helpers ---
-
-def _current_user_id(request: Request) -> int | None:
-    token = request.cookies.get("sb_session")
-    if not token:
-        return None
-    return auth.verify_session_token(token)
-
-
-def _locale(request: Request) -> str:
-    uid = _current_user_id(request)
-    if uid:
-        row = get_db().get_user_by_id(uid)
-        if row:
-            return row["locale"]
-    accept = request.headers.get("accept-language", "cs")
-    if "th" in accept:
-        return "th"
-    if "en" in accept:
-        return "en"
-    return "cs"
-
-
-def _resp(request: Request, template: str, ctx: dict, status: int = 200):
-    locale = _locale(request)
-    uid = _current_user_id(request)
-    user = get_db().get_user_by_id(uid) if uid else None
-    ctx.update(
-        {
-            "request": request,
-            "locale": locale,
-            "t": lambda k: t(locale, k),
-            "bi": bi,
-            "user": user,
-            "is_admin": bool(user and user["is_admin"]),
-            "zone_label": zone_label,
-            "BODY_ZONES": BODY_ZONES,
-            "PROBLEM_TAGS": PROBLEM_TAGS,
-            "HEALTH_FLAGS": HEALTH_FLAGS,
-            "GOOGLE_CLIENT_ID": config.GOOGLE_CLIENT_ID,
-        }
-    )
-    return templates.TemplateResponse(template, ctx, status_code=status)
-
 
 def _login_response(user_id: int, redirect: str = "/profile") -> RedirectResponse:
     token = auth.make_session_token(user_id)
@@ -205,7 +167,7 @@ async def profile_post(request: Request, body: str = Form(...)):
     note = data.get("note_original", "").strip()
     note_th = ""
     if note:
-        note_th = translate_to_thai(note)
+        note_th = translate(note, "th")
 
     data["note_th"] = note_th
     data["note_lang"] = "cs"  # assume CS; could detect later
@@ -235,88 +197,7 @@ async def delete_account(request: Request):
     return resp
 
 
-# --- kiosk (shared salon tablet) ---
-
-def _kiosk_ok(request: Request) -> bool:
-    token = request.cookies.get("sb_kiosk")
-    return bool(token and auth.verify_kiosk_token(token))
-
-
-@app.post("/admin/kiosk/start")
-async def kiosk_start(request: Request):
-    redir = _require_admin(request)
-    if redir:
-        return redir
-    uid = _current_user_id(request)
-    resp = RedirectResponse("/kiosk", status_code=302)
-    resp.set_cookie(
-        "sb_kiosk",
-        auth.make_kiosk_token(uid),
-        max_age=auth.KIOSK_TTL_SECONDS,
-        httponly=True,
-        samesite="lax",
-    )
-    # log the admin out on this device so the client can't reach /admin
-    resp.delete_cookie("sb_session")
-    return resp
-
-
-@app.get("/kiosk", response_class=HTMLResponse)
-async def kiosk_form(request: Request):
-    if not _kiosk_ok(request):
-        return RedirectResponse("/", status_code=302)
-    return _resp(
-        request,
-        "profile.html",
-        {"profile": _profile_to_dict(None), "kiosk": True, "flash": None},
-    )
-
-
-@app.post("/kiosk")
-async def kiosk_submit(request: Request, body: str = Form(...)):
-    if not _kiosk_ok(request):
-        return JSONResponse({"error": "kiosk expired"}, status_code=403)
-    try:
-        data = json.loads(body)
-    except Exception:
-        return JSONResponse({"error": "bad json"}, status_code=400)
-
-    email = (data.get("email") or "").strip().lower()
-    name = (data.get("name") or "").strip()
-    if not email or not name:
-        return JSONResponse({"error": "missing name/email"}, status_code=400)
-    if not data.get("consent") or not data.get("signature_png"):
-        return JSONResponse({"error": "consent required"}, status_code=400)
-
-    note = data.get("note_original", "").strip()
-    data["note_th"] = translate_to_thai(note) if note else ""
-    data["note_lang"] = "cs"
-
-    db = get_db()
-    user = db.ensure_email_user(email)
-    db.set_user_name(user["id"], name)
-    db.save_profile(user["id"], data)
-    return JSONResponse({"ok": True, "redirect": "/kiosk/done"})
-
-
-@app.get("/kiosk/done", response_class=HTMLResponse)
-async def kiosk_done(request: Request):
-    if not _kiosk_ok(request):
-        return RedirectResponse("/", status_code=302)
-    return _resp(request, "kiosk_done.html", {"kiosk": True})
-
-
 # --- admin (Veronika) ---
-
-def _require_admin(request: Request):
-    uid = _current_user_id(request)
-    if not uid:
-        return RedirectResponse("/", status_code=302)
-    user = get_db().get_user_by_id(uid)
-    if not user or not user["is_admin"]:
-        return RedirectResponse("/profile", status_code=302)
-    return None
-
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_clients(request: Request, q: str = ""):
@@ -341,54 +222,18 @@ async def admin_client_detail(request: Request, user_id: int):
         return RedirectResponse("/admin", status_code=302)
     profile = db.get_profile(user_id)
     profile_data = _profile_to_dict(profile)
-    return _resp(request, "admin_detail.html", {"client": client, "profile": profile_data})
-
-
-# --- helper ---
-
-def _profile_to_dict(profile) -> dict:
-    if not profile:
-        return {
-            "focus_zones": [],
-            "avoid_zones": [],
-            "pressure": "medium",
-            "problem_tags": [],
-            "health_flags": [],
-            "oil_allergies": "",
-            "note_original": "",
-            "note_th": "",
-            "phone": "",
-            "has_health_problems": "",
-            "health_problems": "",
-            "pregnancy": "",
-            "blood_pressure": "",
-            "exercise": "",
-            "exercise_detail": "",
-            "recent_surgery": "",
-            "surgery_detail": "",
-            "consent_at": None,
-            "signature_png": "",
-            "updated_at": None,
-        }
-    return {
-        "focus_zones": json.loads(profile["focus_zones"] or "[]"),
-        "avoid_zones": json.loads(profile["avoid_zones"] or "[]"),
-        "pressure": profile["pressure"],
-        "problem_tags": json.loads(profile["problem_tags"] or "[]"),
-        "health_flags": json.loads(profile["health_flags"] or "[]"),
-        "oil_allergies": profile["oil_allergies"] or "",
-        "note_original": profile["note_original"] or "",
-        "note_th": profile["note_th"] or "",
-        "phone": profile["phone"] or "",
-        "has_health_problems": profile["has_health_problems"] or "",
-        "health_problems": profile["health_problems"] or "",
-        "pregnancy": profile["pregnancy"] or "",
-        "blood_pressure": profile["blood_pressure"] or "",
-        "exercise": profile["exercise"] or "",
-        "exercise_detail": profile["exercise_detail"] or "",
-        "recent_surgery": profile["recent_surgery"] or "",
-        "surgery_detail": profile["surgery_detail"] or "",
-        "consent_at": profile["consent_at"],
-        "signature_png": profile["signature_png"] or "",
-        "updated_at": profile["updated_at"],
-    }
+    visits = db.list_visits(user_id)
+    lang = request.query_params.get("lang", "th")
+    if lang not in ("cs", "en", "th"):
+        lang = "th"
+    return _resp(
+        request,
+        "admin_detail.html",
+        {
+            "client": client,
+            "profile": profile_data,
+            "visits": visits,
+            "lang": lang,
+            "t_loc": lambda k: i18n_t(lang, k),
+        },
+    )
