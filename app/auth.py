@@ -35,7 +35,7 @@ def verify_session_token(token: str) -> int | None:
         return None
 
 
-KIOSK_TTL_SECONDS = 2 * 3600
+KIOSK_TTL_SECONDS = 12 * 3600
 
 
 def make_kiosk_token(admin_id: int) -> str:
