@@ -16,12 +16,14 @@ from app.db import DB
 
 @pytest.fixture(autouse=True)
 def reset_pin_lockout():
-    # identity._attempts is a module-level dict shared across the whole test
-    # process — without resetting it, lockout state from one test's failed
-    # PIN attempts bleeds into the next test's "correct PIN" case.
+    # identity._attempts/_windows are module-level dicts shared across the
+    # whole test process — without resetting them, lockout/rate-limit state
+    # from one test bleeds into the next.
     identity._attempts.clear()
+    identity._windows.clear()
     yield
     identity._attempts.clear()
+    identity._windows.clear()
 
 
 @pytest.fixture()
@@ -51,6 +53,7 @@ def admin_client(client, db):
 
 
 VALID_SIGNATURE = "data:image/png;base64," + ("A" * 100)
+STAFF_PIN = os.environ["STAFF_PIN"]
 
 
 def new_visit_payload(**overrides) -> dict:
@@ -80,13 +83,13 @@ def new_visit_payload(**overrides) -> dict:
     return payload
 
 
-def search_and_confirm(client, identifier: str):
+def search_and_confirm(client, identifier: str, pin: str = STAFF_PIN):
     """Runs the staff-driven search+confirm flow end to end, leaving the
-    client with an active sb_client cookie — the equivalent of Aom finding a
-    client and clicking "Ano, otevřít kartu"."""
+    client with an active sb_client cookie — the equivalent of Aom entering
+    the STAFF_PIN, finding a client, and clicking "Ano, otevřít kartu"."""
     import re
 
-    r = client.post("/kiosk/search", data={"identifier": identifier})
+    r = client.post("/kiosk/search", data={"identifier": identifier, "pin": pin})
     match = re.search(r'name="user_id" value="(\d+)"', r.text)
     assert match, f"search for {identifier!r} did not return a confirm screen: {r.text[:300]}"
     return client.post("/kiosk/search/confirm", data={"user_id": match.group(1)})

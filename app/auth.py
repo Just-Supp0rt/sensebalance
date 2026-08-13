@@ -133,3 +133,32 @@ def send_magic_link(to_email: str, link: str):
         log.info("Magic link sent to %s", to_email)
     except Exception:
         log.exception("Failed to send magic link to %s", to_email)
+
+
+def send_lockout_alert(context: str, key: str) -> None:
+    """Best-effort notification when a PIN lockout triggers — a signal of a
+    brute-force attempt, not routine traffic (fires once per lockout, not
+    per failed attempt, see identity.record_failure). Never raises: a broken
+    mailer must not affect the lockout itself, which already did its job."""
+    if not config.ALERT_EMAIL or not config.GMAIL_USER or not config.GMAIL_APP_PASSWORD:
+        log.warning("Lockout on %s (%s) — ALERT_EMAIL not configured, not sending", context, key)
+        return
+    msg = MIMEText(
+        f"PIN lockout triggered on {context}.\n\n"
+        f"Source: {key}\n"
+        f"5 wrong PIN attempts in a row — locked out for 15 minutes.\n\n"
+        f"If this wasn't you or your staff, someone may be trying to guess "
+        f"the PIN from the internet.",
+        "plain",
+        "utf-8",
+    )
+    msg["Subject"] = f"Sense Balance — PIN lockout on {context}"
+    msg["From"] = config.GMAIL_USER
+    msg["To"] = config.ALERT_EMAIL
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+            s.login(config.GMAIL_USER, config.GMAIL_APP_PASSWORD)
+            s.sendmail(config.GMAIL_USER, [config.ALERT_EMAIL], msg.as_string())
+        log.info("Lockout alert sent for %s", context)
+    except Exception:
+        log.exception("Failed to send lockout alert for %s", context)

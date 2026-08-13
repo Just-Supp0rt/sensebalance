@@ -59,6 +59,13 @@ STRINGS = {
                         "napětí nebo ke zlepšení krevního oběhu. Masážní terapeut nediagnostikuje "
                         "nemoci ani nevykonává manipulaci s páteří. Souhlasím se zpracováním "
                         "osobních údajů v souladu s GDPR.",
+        "gdpr_info_toggle": "ℹ️ Co to znamená pro moje údaje?",
+        "gdpr_info_text": "Správcem údajů je Sense Balance. Zpracováváme jméno, telefon, e-mail, "
+                        "zdravotní údaje uvedené ve formuláři a podpis — výhradně proto, aby vám "
+                        "terapeutka mohla bezpečně poskytnout masáž (např. vynechat oblasti při "
+                        "zdravotním omezení). Údaje uchováváme, dokud nepožádáte o jejich smazání. "
+                        "O výmaz nebo náhled do svých údajů můžete kdykoliv požádat na "
+                        "dejv.por@gmail.com.",
         "agree": "Souhlasím",
         "signature": "Podpis",
         "clear": "Smazat",
@@ -180,6 +187,12 @@ STRINGS = {
         "consent_text": "I understand that massage therapy is used to reduce stress, relieve muscle "
                         "tension, or improve blood circulation. A massage therapist does not diagnose "
                         "diseases. I agree to the processing of personal data in accordance with GDPR.",
+        "gdpr_info_toggle": "ℹ️ What does this mean for my data?",
+        "gdpr_info_text": "The data controller is Sense Balance. We process your name, phone, email, "
+                        "the health information you fill in, and your signature — solely so the "
+                        "therapist can give you a safe massage (e.g. avoiding areas due to a health "
+                        "condition). We keep it until you ask us to delete it. You can request "
+                        "deletion or a copy of your data at any time at dejv.por@gmail.com.",
         "agree": "Agree",
         "signature": "Signature",
         "clear": "Clear",

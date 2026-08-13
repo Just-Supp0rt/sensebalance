@@ -12,8 +12,13 @@ GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
-# 4-digit PIN the therapist enters on the kiosk to preview the last submission.
+# 4-digit PIN the therapist enters on the kiosk to preview the last submission,
+# and on every client search.
 STAFF_PIN = os.getenv("STAFF_PIN", "")
+
+# Notified by email when a PIN lockout triggers (brute-force attempt). Empty
+# disables alerting — the lockout itself still applies either way.
+ALERT_EMAIL = os.getenv("ALERT_EMAIL", "")
 
 DEV = os.getenv("DEV", "") == "1"
 

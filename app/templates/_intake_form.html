@@ -39,6 +39,7 @@
 <div class="card">
   <p class="consent-text">{{ bi('consent_text')[0] }}</p>
   <p class="consent-text q-en">{{ bi('consent_text')[1] }}</p>
+  {% include '_gdpr_info.html' %}
 
   <label class="consent-check">
     <input type="checkbox" id="f-consent" {% if profile.consent_at %}checked{% endif %}>

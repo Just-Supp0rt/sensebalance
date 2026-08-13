@@ -16,9 +16,15 @@
   <h1>{{ t_loc('search_title') }}</h1>
 </div>
 <div class="search-wrap card">
+  {% if error %}
+  <div class="flash error" style="margin-bottom:1rem;">{{ error }}</div>
+  {% endif %}
   <form method="post" action="/kiosk/search">
     <label>{{ bi('identifier_label')[0] }} / {{ bi('identifier_label')[1] }}</label>
     <input type="text" name="identifier" autocomplete="off" required autofocus>
+    <label style="margin-top:0.9rem;">{{ bi('staff_pin_label')[0] }} / {{ bi('staff_pin_label')[1] }}</label>
+    <input type="text" name="pin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+           autocomplete="off" required>
     <button type="submit" class="btn btn--full" style="margin-top:1.2rem;">{{ t_loc('search_submit') }}</button>
   </form>
 

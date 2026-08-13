@@ -154,10 +154,12 @@ async def kiosk_start(request: Request, target: str = Form("/kiosk")):
 
 
 # --- search screen (staff-driven, replaces the old client PIN self-service) ---
-# Aom looks the client up by phone/email before handing them the tablet. No
-# PIN is asked of the client at all — she is the trusted party here, not an
-# anonymous walk-up, so identity resolution moves to her instead of a secret
-# the client has to remember.
+# Aom looks the client up by phone/email before handing them the tablet. The
+# client never types a PIN — but the search itself is gated on STAFF_PIN
+# (same secret as /kiosk/last), entered fresh on every lookup. Without this,
+# anyone holding the tablet in kiosk mode could search and read any other
+# client's health data by guessing a phone number — the exact leak the old
+# client-PIN design existed to prevent, just moved to a different door.
 
 def _search_ctx(**extra) -> dict:
     # Kiosk mode has no logged-in session (sb_session is dropped by
@@ -171,22 +173,57 @@ def _search_ctx(**extra) -> dict:
 async def kiosk_search_form(request: Request):
     if not _kiosk_ok(request):
         return RedirectResponse("/", status_code=302)
-    resp = _resp(request, "kiosk_search.html", _search_ctx(no_match=False))
+    resp = _resp(request, "kiosk_search.html", _search_ctx(no_match=False, error=None))
     resp.delete_cookie("sb_client")
     return resp
 
 
 @router.post("/kiosk/search", response_class=HTMLResponse)
-async def kiosk_search_submit(request: Request, identifier: str = Form(...)):
+async def kiosk_search_submit(
+    request: Request, identifier: str = Form(...), pin: str = Form(...)
+):
     if not _kiosk_ok(request):
         return RedirectResponse("/", status_code=302)
+
+    ip = identity.client_ip(request)
+    lock_key = f"search_pin:{ip}"
+
+    if identity.is_locked(lock_key):
+        cs, en = i18n_bi("return_locked")
+        return _resp(
+            request,
+            "kiosk_search.html",
+            _search_ctx(no_match=False, error=f"{cs} / {en}"),
+            status=429,
+        )
+    if not identity.check_rate_limit(f"search_rate:{ip}"):
+        cs, en = i18n_bi("return_locked")
+        return _resp(
+            request,
+            "kiosk_search.html",
+            _search_ctx(no_match=False, error=f"{cs} / {en}"),
+            status=429,
+        )
+
+    ok = bool(config.STAFF_PIN) and secrets.compare_digest(pin, config.STAFF_PIN)
+    if not ok:
+        if identity.record_failure(lock_key):
+            auth.send_lockout_alert("kiosk search", ip)
+        cs, en = i18n_bi("staff_pin_wrong")
+        return _resp(
+            request,
+            "kiosk_search.html",
+            _search_ctx(no_match=False, error=f"{cs} / {en}"),
+            status=401,
+        )
+    identity.record_success(lock_key)
 
     norm_id = identity.normalize_identifier(identifier)
     db = get_db()
     user = db.find_user_by_identifier(norm_id) if norm_id else None
 
     if not user:
-        return _resp(request, "kiosk_search.html", _search_ctx(no_match=True))
+        return _resp(request, "kiosk_search.html", _search_ctx(no_match=True, error=None))
 
     last_visit = db.latest_visit(user["id"])
     return _resp(
@@ -416,7 +453,10 @@ async def kiosk_last_unlock(request: Request, pin: str = Form(...)):
     if not _kiosk_ok(request):
         return RedirectResponse("/", status_code=302)
 
-    if identity.is_locked("staff_pin"):
+    ip = identity.client_ip(request)
+    lock_key = f"last_pin:{ip}"
+
+    if identity.is_locked(lock_key):
         cs, en = i18n_bi("return_locked")
         return _resp(
             request,
@@ -427,7 +467,8 @@ async def kiosk_last_unlock(request: Request, pin: str = Form(...)):
 
     ok = bool(config.STAFF_PIN) and secrets.compare_digest(pin, config.STAFF_PIN)
     if not ok:
-        identity.record_failure("staff_pin")
+        if identity.record_failure(lock_key):
+            auth.send_lockout_alert("kiosk/last preview", ip)
         cs, en = i18n_bi("staff_pin_wrong")
         return _resp(
             request,
@@ -436,7 +477,7 @@ async def kiosk_last_unlock(request: Request, pin: str = Form(...)):
             status=401,
         )
 
-    identity.record_success("staff_pin")
+    identity.record_success(lock_key)
     resp = RedirectResponse("/kiosk/last", status_code=302)
     resp.set_cookie(
         "sb_staff",

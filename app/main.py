@@ -92,8 +92,14 @@ async def health():
 
 @app.post("/auth/staff-login")
 async def staff_login(request: Request, name: str = Form(...), pin: str = Form(...)):
-    key = f"staff-login:{name.strip().lower()}"
+    ip = identity.client_ip(request)
+    key = f"staff-login:{ip}:{name.strip().lower()}"
     if identity.is_locked(key):
+        cs, en = i18n_bi("return_locked")
+        return _resp(
+            request, "login.html", {"error": f"{cs} / {en}", "sent": False}, status=429
+        )
+    if not identity.check_rate_limit(f"staff-login-rate:{ip}"):
         cs, en = i18n_bi("return_locked")
         return _resp(
             request, "login.html", {"error": f"{cs} / {en}", "sent": False}, status=429
@@ -105,7 +111,8 @@ async def staff_login(request: Request, name: str = Form(...), pin: str = Form(.
         pin, user["pin_hash"] if user else "", user["pin_salt"] if user else ""
     )
     if not ok:
-        identity.record_failure(key)
+        if identity.record_failure(key):
+            auth.send_lockout_alert("staff login", f"{ip} (name={name.strip()!r})")
         cs, en = i18n_bi("return_error")
         return _resp(
             request, "login.html", {"error": f"{cs} / {en}", "sent": False}, status=401

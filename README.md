@@ -10,21 +10,34 @@ framework.
 ## Features
 
 - **Client intake form** — personal details, health status, lifestyle, massage
-  preferences, body map (focus/avoid zones), consent with drawn signature.
+  preferences, body map (focus/avoid zones), consent with drawn signature, and
+  a collapsible plain-language GDPR notice next to the consent checkbox
+  (who processes the data, why, how long, how to request deletion — the copy
+  in `i18n.py` is a reasonable draft, not legal advice; have it reviewed).
 - **Kiosk mode**, staff-driven identity — no client-facing PIN:
-  - The therapist searches by phone or email (`/kiosk`) before handing the
-    tablet to the client. No match → a "client's first visit" prompt starts
-    the full first-visit form (name, phone, email all required). A match →
-    a short "is this them?" confirmation (name + last visit date) before the
-    client's card opens, then a read-only recap with tiles to open only the
-    sections that changed (health, lifestyle, preferences, body map) — always
+  - The therapist enters `STAFF_PIN` alongside the phone/email search
+    (`/kiosk`) every time, before handing the tablet to the client — without
+    it, anyone holding the tablet in kiosk mode could look up any client's
+    health data. No match → a "client's first visit" prompt starts the full
+    first-visit form (name, phone, email all required). A match → a short
+    "is this them?" confirmation (name + last visit date) before the client's
+    card opens, then a read-only recap with tiles to open only the sections
+    that changed (health, lifestyle, preferences, body map) — always
     re-signed, even if nothing changed.
   - Every submission — first or return — is appended as an immutable row in
     the `visit` table, never overwritten. `profile` holds the latest state for
     prefilling the form; `visit` is the audit trail proving what was signed
     and when.
-  - A therapist-only "for the therapist" screen (`/kiosk/last`, gated by
+  - A therapist-only "for the therapist" screen (`/kiosk/last`, also gated by
     `STAFF_PIN`) shows the last submission made on that device, in CZ/EN/TH.
+- **Brute-force protection** — every PIN check (staff login, kiosk search,
+  therapist preview) is rate-limited and lockout-gated **per client IP**
+  (`identity.client_ip`, `app/identity.py`), not by a single shared counter —
+  otherwise a remote attacker spamming wrong PINs could lock Aom out too.
+  A lockout fires one alert email (`ALERT_EMAIL`) instead of one per attempt.
+  If the app runs behind a reverse proxy, that proxy must forward
+  `X-Forwarded-For` for the per-IP keying to see real client IPs instead of
+  the proxy's own address.
 - **Staff login** — name + personal 4-digit PIN (`/auth/staff-login`), shown
   on the login screen. Email magic-link and Google OAuth routes still exist
   in `main.py` and work, but aren't linked from the UI.
@@ -91,10 +104,11 @@ All via environment variables (see `app/config.py`):
 |---|---|---|
 | `DATA_DIR` | `/data` | SQLite location |
 | `SECRET_KEY` | `dev-secret-change-in-prod` | **Must** be set in production — signs session, kiosk, client and staff tokens. The app refuses to start on the default value unless `DEV=1` is set. |
-| `STAFF_PIN` | empty | 4-digit PIN for the therapist's `/kiosk/last` preview. Unset ⇒ that screen never unlocks. |
+| `STAFF_PIN` | empty | 4-digit PIN required for `/kiosk/last` and every `/kiosk/search` lookup. Unset ⇒ those never unlock. |
+| `ALERT_EMAIL` | empty | Gets a one-time email when a PIN lockout triggers (staff login, kiosk search, or the therapist preview) — a brute-force signal, not routine traffic. Needs `GMAIL_USER`/`GMAIL_APP_PASSWORD` too. Unset ⇒ lockouts still happen, just not emailed. |
 | `DEV` | unset | Set to `1` to allow the insecure default `SECRET_KEY` locally |
 | `BASE_URL` | `http://localhost:8093` | Used to build magic links |
-| `GMAIL_USER`, `GMAIL_APP_PASSWORD` | empty | Unset ⇒ magic links are logged, not sent |
+| `GMAIL_USER`, `GMAIL_APP_PASSWORD` | empty | Unset ⇒ magic links and lockout alerts are logged, not sent |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | empty | Google OAuth |
 | `OLLAMA_URL` | `http://192.168.1.159:11434` | Translation backend |
 | `OLLAMA_MODEL` | `qwen3:8b` | |
