@@ -17,6 +17,14 @@
 .client-date { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
 .no-profile-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
 .profile-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--focus); }
+.first-visit-cta {
+  display: block; text-decoration: none; text-align: center;
+  padding: 1rem; border-radius: var(--radius);
+  border: 2px solid var(--accent); background: var(--accent-soft); color: var(--text);
+  margin-top: 0.75rem; cursor: pointer; width: 100%; font: inherit;
+}
+.first-visit-cta .th { font-size: 1.1rem; font-weight: 800; display: block; }
+.first-visit-cta .bi { color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; display: block; }
 {% endblock %}
 {% block content %}
 <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.5rem;">
@@ -51,4 +59,14 @@
     <p style="padding:1rem 0;color:var(--muted);text-align:center;">Žádní klienti</p>
   {% endif %}
 </div>
+{% if q and not clients %}
+<form method="post" action="/admin/kiosk/start">
+  <input type="hidden" name="target" value="/kiosk/new">
+  <button type="submit" class="first-visit-cta"
+          onclick="return confirm('{{ t('start_kiosk') }}? (odhlásí vás na tomto zařízení)')">
+    <span class="th">🌿 {{ t_loc('first_visit_cta') }}</span>
+    <span class="bi">{{ bi('first_visit_cta')[0] }} · {{ bi('first_visit_cta')[1] }}</span>
+  </button>
+</form>
+{% endif %}
 {% endblock %}

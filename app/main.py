@@ -239,7 +239,11 @@ async def admin_clients(request: Request, q: str = ""):
     if q:
         q_lower = q.lower()
         users = [u for u in users if q_lower in (u["email"] or "").lower() or q_lower in (u["name"] or "").lower()]
-    return _resp(request, "admin_list.html", {"clients": users, "q": q})
+    return _resp(
+        request,
+        "admin_list.html",
+        {"clients": users, "q": q, "t_loc": lambda k: i18n_t("th", k)},
+    )
 
 
 @app.get("/admin/client/{user_id}", response_class=HTMLResponse)

@@ -128,14 +128,19 @@ def _client_uid(request: Request) -> int | None:
 
 # --- admin: start kiosk mode on this device ---
 
+_KIOSK_START_TARGETS = {"/kiosk", "/kiosk/new"}
+
+
 @router.post("/admin/kiosk/start")
-async def kiosk_start(request: Request):
+async def kiosk_start(request: Request, target: str = Form("/kiosk")):
     redir = _require_admin(request)
     if redir:
         return redir
+    if target not in _KIOSK_START_TARGETS:
+        target = "/kiosk"
 
     uid = _current_user_id(request)
-    resp = RedirectResponse("/kiosk", status_code=302)
+    resp = RedirectResponse(target, status_code=302)
     resp.set_cookie(
         "sb_kiosk",
         auth.make_kiosk_token(uid),
