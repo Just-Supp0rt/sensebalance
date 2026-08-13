@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import auth, config
+from app import auth, config, identity
 from app.deps import (
     _current_user_id,
     _profile_to_dict,
@@ -18,6 +18,7 @@ from app.deps import (
     _resp,
     get_db,
 )
+from app.i18n import bi as i18n_bi
 from app.i18n import t as i18n_t
 from app.routes.kiosk import router as kiosk_router
 from app.translate import translate
@@ -84,7 +85,37 @@ async def health():
     return {"ok": True}
 
 
-# --- magic link auth ---
+# --- staff login (name + PIN) ---
+# Primary login path for Aom/Kuba, shown on login.html. Magic-link and Google
+# OAuth below stay wired up but are no longer linked from the UI — cheaper to
+# leave dormant than to rip out hours before a demo.
+
+@app.post("/auth/staff-login")
+async def staff_login(request: Request, name: str = Form(...), pin: str = Form(...)):
+    key = f"staff-login:{name.strip().lower()}"
+    if identity.is_locked(key):
+        cs, en = i18n_bi("return_locked")
+        return _resp(
+            request, "login.html", {"error": f"{cs} / {en}", "sent": False}, status=429
+        )
+
+    db = get_db()
+    user = db.get_admin_by_name(name.strip())
+    ok = identity.verify_pin_hash(
+        pin, user["pin_hash"] if user else "", user["pin_salt"] if user else ""
+    )
+    if not ok:
+        identity.record_failure(key)
+        cs, en = i18n_bi("return_error")
+        return _resp(
+            request, "login.html", {"error": f"{cs} / {en}", "sent": False}, status=401
+        )
+
+    identity.record_success(key)
+    return _login_response(user["id"])
+
+
+# --- magic link auth (dormant — not linked from the UI, see above) ---
 
 @app.post("/auth/magic-request")
 async def magic_request(request: Request, email: str = Form(...)):

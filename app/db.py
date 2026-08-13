@@ -147,6 +147,13 @@ class DB:
             "SELECT * FROM user WHERE google_sub = ?", (sub,)
         ).fetchone()
 
+    def get_admin_by_name(self, name: str) -> sqlite3.Row | None:
+        """Case-insensitive exact match, restricted to admin accounts — used by
+        the staff name+PIN login. Assumes distinct staff display names."""
+        return self._conn.execute(
+            "SELECT * FROM user WHERE LOWER(name) = LOWER(?) AND is_admin = 1", (name,)
+        ).fetchone()
+
     def upsert_google_user(self, email: str, name: str, sub: str) -> sqlite3.Row:
         existing = self.get_user_by_google_sub(sub)
         if existing:

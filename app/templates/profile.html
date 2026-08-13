@@ -28,15 +28,13 @@ window.INTAKE_CONFIG = {
   profile: {{ profile | tojson }},
   kiosk: {{ 'true' if kiosk else 'false' }},
   submitUrl: {{ ('/kiosk/new' if kiosk else '/profile') | tojson }},
-  requirePin: {{ 'true' if kiosk else 'false' }},
   successRedirect: {{ ('/kiosk/done' if kiosk else none) | tojson }},
   trackChangedSections: false,
 };
 window.INTAKE_STRINGS = {
   missing_name_email: '{{ bi("name")[0] }} + {{ bi("email")[0] }} / {{ bi("name")[1] }} + {{ bi("email")[1] }}',
+  missing_phone: '{{ bi("phone_required")[0] }} / {{ bi("phone_required")[1] }}',
   consent_required: '{{ bi("consent_required")[0] }} / {{ bi("consent_required")[1] }}',
-  pin_invalid: '{{ bi("pin_invalid")[0] }} / {{ bi("pin_invalid")[1] }}',
-  pin_mismatch: '{{ bi("pin_mismatch")[0] }} / {{ bi("pin_mismatch")[1] }}',
   saved: '{{ t("saved") }}',
 };
 </script>

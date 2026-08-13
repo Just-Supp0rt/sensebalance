@@ -148,14 +148,69 @@ async def kiosk_start(request: Request):
     return resp
 
 
-# --- welcome screen ---
+# --- search screen (staff-driven, replaces the old client PIN self-service) ---
+# Aom looks the client up by phone/email before handing them the tablet. No
+# PIN is asked of the client at all — she is the trusted party here, not an
+# anonymous walk-up, so identity resolution moves to her instead of a secret
+# the client has to remember.
+
+def _search_ctx(**extra) -> dict:
+    # Kiosk mode has no logged-in session (sb_session is dropped by
+    # /admin/kiosk/start), so the request-locale `t()` falls back to the
+    # browser's Accept-Language — not necessarily Thai. These screens are
+    # operated by Aom, so pin the primary-language strings to Thai explicitly.
+    return {"kiosk": True, "t_loc": lambda k: i18n_t("th", k), **extra}
+
 
 @router.get("/kiosk", response_class=HTMLResponse)
-async def kiosk_welcome(request: Request):
+async def kiosk_search_form(request: Request):
     if not _kiosk_ok(request):
         return RedirectResponse("/", status_code=302)
-    resp = _resp(request, "kiosk_welcome.html", {"kiosk": True})
+    resp = _resp(request, "kiosk_search.html", _search_ctx(no_match=False))
     resp.delete_cookie("sb_client")
+    return resp
+
+
+@router.post("/kiosk/search", response_class=HTMLResponse)
+async def kiosk_search_submit(request: Request, identifier: str = Form(...)):
+    if not _kiosk_ok(request):
+        return RedirectResponse("/", status_code=302)
+
+    norm_id = identity.normalize_identifier(identifier)
+    db = get_db()
+    user = db.find_user_by_identifier(norm_id) if norm_id else None
+
+    if not user:
+        return _resp(request, "kiosk_search.html", _search_ctx(no_match=True))
+
+    last_visit = db.latest_visit(user["id"])
+    return _resp(
+        request,
+        "kiosk_search_confirm.html",
+        _search_ctx(
+            match=user,
+            last_visit_at=last_visit["created_at"] if last_visit else None,
+        ),
+    )
+
+
+@router.post("/kiosk/search/confirm")
+async def kiosk_search_confirm(request: Request, user_id: int = Form(...)):
+    if not _kiosk_ok(request):
+        return RedirectResponse("/", status_code=302)
+    db = get_db()
+    user = db.get_user_by_id(user_id)
+    if not user:
+        return RedirectResponse("/kiosk", status_code=302)
+
+    resp = RedirectResponse("/kiosk/update", status_code=302)
+    resp.set_cookie(
+        "sb_client",
+        auth.make_client_token(user["id"]),
+        max_age=auth.CLIENT_TTL_SECONDS,
+        httponly=True,
+        samesite="lax",
+    )
     return resp
 
 
@@ -168,7 +223,7 @@ async def kiosk_new_form(request: Request):
     return _resp(
         request,
         "kiosk_new.html",
-        {"profile": _profile_to_dict(None), "kiosk": True, "require_pin": True},
+        {"profile": _profile_to_dict(None), "kiosk": True},
     )
 
 
@@ -187,21 +242,14 @@ async def kiosk_new_submit(
     clean = clean_intake_data(raw)
     if not clean["name"] or not _valid_email(clean["email"]):
         return _err("identifier_label")
+    if not clean["phone"]:
+        return _err("phone_required")
     if not clean["consent"] or not _valid_signature(clean["signature_png"]):
         return _err("consent_required")
-
-    pin = (raw.get("pin") or "").strip()
-    pin_confirm = (raw.get("pin_confirm") or "").strip()
-    if not identity.is_valid_pin(pin):
-        return _err("pin_invalid")
-    if pin != pin_confirm:
-        return _err("pin_mismatch")
 
     db = get_db()
     user = db.ensure_kiosk_user(clean["email"], clean["phone"])
     db.set_user_name(user["id"], clean["name"])
-    pin_hash, pin_salt = identity.hash_pin(pin)
-    db.set_pin(user["id"], pin_hash, pin_salt)
 
     clean["note_lang"] = "cs"
     clean["note_th"] = ""
@@ -214,59 +262,6 @@ async def kiosk_new_submit(
         "sb_last_visit",
         auth.make_last_visit_token(visit_id),
         max_age=auth.LAST_VISIT_TTL_SECONDS,
-        httponly=True,
-        samesite="lax",
-    )
-    return resp
-
-
-# --- return visit: identity check ---
-
-@router.get("/kiosk/return", response_class=HTMLResponse)
-async def kiosk_return_form(request: Request):
-    if not _kiosk_ok(request):
-        return RedirectResponse("/", status_code=302)
-    return _resp(request, "kiosk_return.html", {"kiosk": True, "error": None})
-
-
-@router.post("/kiosk/return")
-async def kiosk_return_submit(
-    request: Request, identifier: str = Form(...), pin: str = Form(...)
-):
-    if not _kiosk_ok(request):
-        return RedirectResponse("/", status_code=302)
-
-    norm_id = identity.normalize_identifier(identifier)
-
-    if identity.is_locked(norm_id):
-        return _resp(
-            request,
-            "kiosk_return.html",
-            {"kiosk": True, "error": f"{i18n_bi('return_locked')[0]} / {i18n_bi('return_locked')[1]}"},
-            status=429,
-        )
-
-    db = get_db()
-    user = db.find_user_by_identifier(norm_id) if norm_id else None
-    pin_hash = user["pin_hash"] if user else ""
-    pin_salt = user["pin_salt"] if user else ""
-    ok = identity.verify_pin_hash(pin, pin_hash, pin_salt)
-
-    if not ok:
-        identity.record_failure(norm_id)
-        return _resp(
-            request,
-            "kiosk_return.html",
-            {"kiosk": True, "error": f"{i18n_bi('return_error')[0]} / {i18n_bi('return_error')[1]}"},
-            status=401,
-        )
-
-    identity.record_success(norm_id)
-    resp = RedirectResponse("/kiosk/update", status_code=302)
-    resp.set_cookie(
-        "sb_client",
-        auth.make_client_token(user["id"]),
-        max_age=auth.CLIENT_TTL_SECONDS,
         httponly=True,
         samesite="lax",
     )

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t_loc('confirm_client_title') }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.confirm-wrap { max-width: 460px; margin: 2rem auto; text-align: center; }
+{% endblock %}
+{% block content %}
+<div class="confirm-wrap card">
+  <h1 style="font-size:1.4rem;margin-bottom:0.75rem;">{{ t_loc('confirm_client_title') }}</h1>
+  <div style="font-size:1.6rem;font-weight:800;margin-bottom:0.3rem;">{{ match.name or match.email }}</div>
+  <div style="color:var(--muted);font-size:0.95rem;margin-bottom:1.5rem;">
+    {{ match.email }}{% if match.phone %} · {{ match.phone }}{% endif %}
+    {% if last_visit_at %}<br>{{ t_loc('confirm_client_last_visit') }}: {{ last_visit_at[:10] }}{% endif %}
+  </div>
+
+  <form method="post" action="/kiosk/search/confirm">
+    <input type="hidden" name="user_id" value="{{ match.id }}">
+    <button type="submit" class="btn btn--full">{{ t_loc('confirm_yes') }}</button>
+  </form>
+  <div style="margin-top:0.9rem;">
+    <a href="/kiosk" style="color:var(--muted);font-size:0.9rem;">‹ {{ t_loc('confirm_back') }}</a>
+  </div>
+</div>
+{% endblock %}
