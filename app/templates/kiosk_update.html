@@ -96,15 +96,13 @@ window.INTAKE_CONFIG = {
   profile: {{ profile | tojson }},
   kiosk: true,
   submitUrl: '/kiosk/update',
-  requirePin: false,
   successRedirect: '/kiosk/done',
   trackChangedSections: true,
 };
 window.INTAKE_STRINGS = {
   missing_name_email: '',
+  missing_phone: '',
   consent_required: '{{ bi("consent_required")[0] }} / {{ bi("consent_required")[1] }}',
-  pin_invalid: '',
-  pin_mismatch: '',
   saved: '{{ t("saved") }}',
 };
 </script>

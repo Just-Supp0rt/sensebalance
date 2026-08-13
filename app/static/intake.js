@@ -6,7 +6,7 @@
 //   profile: {...}            prefill data (server's `profile` dict, tojson'd)
 //   kiosk: bool                kiosk-mode validation (name+email+consent+signature required)
 //   submitUrl: string          where to POST the collected JSON
-//   requirePin: bool           collect+validate a 4-digit PIN (first-visit only)
+//   requirePhone: bool         require the phone field before submit (first-visit only)
 //   successRedirect: string|null  where to navigate on success; null = reload in place
 //   trackChangedSections: bool track which .tile sections were opened, and submit them
 
@@ -172,10 +172,6 @@
       consent: document.getElementById('f-consent').checked,
       signature_png: sigDirty ? sigPad.toDataURL('image/png') : (PROFILE.signature_png || ''),
     };
-    if (CONFIG.requirePin) {
-      data.pin = document.getElementById('f-pin').value.trim();
-      data.pin_confirm = document.getElementById('f-pin-confirm').value.trim();
-    }
     if (CONFIG.trackChangedSections) {
       data.changed_sections = [...state.changedSections];
     }
@@ -195,13 +191,13 @@
       showError(window.INTAKE_STRINGS.missing_name_email);
       return;
     }
+    if (CONFIG.requirePhone && !data.phone) {
+      showError(window.INTAKE_STRINGS.missing_phone);
+      return;
+    }
     if (KIOSK && (!data.consent || !data.signature_png)) {
       showError(window.INTAKE_STRINGS.consent_required);
       return;
-    }
-    if (CONFIG.requirePin) {
-      if (!/^\d{4}$/.test(data.pin)) { showError(window.INTAKE_STRINGS.pin_invalid); return; }
-      if (data.pin !== data.pin_confirm) { showError(window.INTAKE_STRINGS.pin_mismatch); return; }
     }
     const btn = document.getElementById('submitBtn');
     const status = document.getElementById('saveStatus');

@@ -75,8 +75,18 @@ def new_visit_payload(**overrides) -> dict:
         "note_original": "",
         "consent": True,
         "signature_png": VALID_SIGNATURE,
-        "pin": "1234",
-        "pin_confirm": "1234",
     }
     payload.update(overrides)
     return payload
+
+
+def search_and_confirm(client, identifier: str):
+    """Runs the staff-driven search+confirm flow end to end, leaving the
+    client with an active sb_client cookie — the equivalent of Aom finding a
+    client and clicking "Ano, otevřít kartu"."""
+    import re
+
+    r = client.post("/kiosk/search", data={"identifier": identifier})
+    match = re.search(r'name="user_id" value="(\d+)"', r.text)
+    assert match, f"search for {identifier!r} did not return a confirm screen: {r.text[:300]}"
+    return client.post("/kiosk/search/confirm", data={"user_id": match.group(1)})

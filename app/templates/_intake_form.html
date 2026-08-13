@@ -16,7 +16,8 @@
     </div>
     <div>
       {{ qlabel('phone') }}
-      <input type="tel" id="f-phone" autocomplete="tel" value="{{ profile.phone }}">
+      <input type="tel" id="f-phone" autocomplete="tel" value="{{ profile.phone }}"
+             {% if kiosk %}required{% endif %}>
     </div>
   </div>
   {{ qlabel('email') }}
@@ -25,22 +26,6 @@
   {% else %}
   <input type="email" id="f-email" value="{{ user.email }}" readonly
          style="background:var(--bg);color:var(--muted);">
-  {% endif %}
-
-  {% if require_pin %}
-  <div class="grid2" style="margin-top:1.1rem;">
-    <div>
-      {{ qlabel('choose_pin') }}
-      <input type="text" id="f-pin" inputmode="numeric" maxlength="4" autocomplete="off"
-             pattern="[0-9]{4}" placeholder="••••">
-    </div>
-    <div>
-      {{ qlabel('confirm_pin') }}
-      <input type="text" id="f-pin-confirm" inputmode="numeric" maxlength="4" autocomplete="off"
-             pattern="[0-9]{4}" placeholder="••••">
-    </div>
-  </div>
-  <p class="hint">{{ bi('pin_hint')[0] }}<br>{{ bi('pin_hint')[1] }}</p>
   {% endif %}
 </div>
 

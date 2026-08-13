@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ t_loc('search_title') }} – {{ t('app_name') }}{% endblock %}
+{% block extra_style %}
+.search-wrap { max-width: 460px; margin: 2rem auto; }
+.first-visit-cta {
+  display: block; text-decoration: none; text-align: center;
+  padding: 1.4rem 1rem; border-radius: var(--radius);
+  border: 2px solid var(--accent); background: var(--accent-soft); color: var(--text);
+  margin-top: 1.25rem;
+}
+.first-visit-cta .th { font-size: 1.3rem; font-weight: 800; display: block; }
+.first-visit-cta .bi { color: var(--muted); font-size: 0.95rem; margin-top: 0.3rem; display: block; }
+{% endblock %}
+{% block content %}
+<div class="form-title">
+  <h1>{{ t_loc('search_title') }}</h1>
+</div>
+<div class="search-wrap card">
+  <form method="post" action="/kiosk/search">
+    <label>{{ bi('identifier_label')[0] }} / {{ bi('identifier_label')[1] }}</label>
+    <input type="text" name="identifier" autocomplete="off" required autofocus>
+    <button type="submit" class="btn btn--full" style="margin-top:1.2rem;">{{ t_loc('search_submit') }}</button>
+  </form>
+
+  {% if no_match %}
+  <div class="flash error" style="margin-top:1rem;">{{ t_loc('search_no_match') }}</div>
+  <a href="/kiosk/new" class="first-visit-cta">
+    <span class="th">🌿 {{ t_loc('first_visit_cta') }}</span>
+    <span class="bi">{{ bi('first_visit_cta')[0] }} · {{ bi('first_visit_cta')[1] }}</span>
+  </a>
+  {% endif %}
+</div>
+{% endblock %}

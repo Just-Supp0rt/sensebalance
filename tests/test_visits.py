@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import json
 
-from tests.conftest import new_visit_payload
+from tests.conftest import new_visit_payload, search_and_confirm
 
 
 def test_two_submissions_create_two_immutable_visit_rows(admin_client, db):
     admin_client.post("/kiosk/new", data={"body": json.dumps(new_visit_payload())})
-    admin_client.post(
-        "/kiosk/return", data={"identifier": "david@example.com", "pin": "1234"}
-    )
+    search_and_confirm(admin_client, "david@example.com")
     update_payload = new_visit_payload(
         has_health_problems="yes",
         health_problems="nova bolest zad",
@@ -32,9 +30,7 @@ def test_two_submissions_create_two_immutable_visit_rows(admin_client, db):
 
 def test_no_change_submission_still_records_full_snapshot(admin_client, db):
     admin_client.post("/kiosk/new", data={"body": json.dumps(new_visit_payload())})
-    admin_client.post(
-        "/kiosk/return", data={"identifier": "david@example.com", "pin": "1234"}
-    )
+    search_and_confirm(admin_client, "david@example.com")
     r = admin_client.post(
         "/kiosk/update", data={"body": json.dumps(new_visit_payload(changed_sections=[]))}
     )
