@@ -104,6 +104,29 @@
     });
   });
 
+  // --- tap-only counters (avoids the keyboard for "how many times/week"-style answers) ---
+  document.querySelectorAll('.stepper').forEach((stepper) => {
+    const target = document.getElementById(stepper.dataset.target);
+    const valueEl = stepper.querySelector('.stepper-value');
+    const suffixCs = stepper.dataset.suffixCs || '';
+    const suffixEn = stepper.dataset.suffixEn || '';
+    const max = parseInt(stepper.dataset.max || '14', 10);
+    const existing = parseInt((target.value || '').match(/\d+/), 10);
+    let n = Number.isNaN(existing) ? 0 : existing;
+    function render() {
+      valueEl.textContent = n;
+      target.value = n > 0 ? `${n}${suffixCs} / ${n}${suffixEn}` : '';
+    }
+    render();
+    stepper.querySelectorAll('.stepper-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        n = Math.max(0, Math.min(max, n + parseInt(btn.dataset.delta, 10)));
+        render();
+        markChanged('lifestyle');
+      });
+    });
+  });
+
   // --- signature pad ---
   const sigPad = document.getElementById('sigPad');
   const sigCtx = sigPad.getContext('2d');

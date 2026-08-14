@@ -5,7 +5,14 @@
   {{ yesno('exercise') }}
   <div class="detail" id="d-exercise">
     {{ qlabel('q_exercise_detail') }}
-    <input type="text" id="f-exercise_detail" value="{{ profile.exercise_detail }}">
+    <div class="stepper" data-target="f-exercise_detail"
+         data-suffix-cs="{{ bi('exercise_times_suffix')[0] }}"
+         data-suffix-en="{{ bi('exercise_times_suffix')[1] }}" data-max="14">
+      <button type="button" class="stepper-btn" data-delta="-1">−</button>
+      <span class="stepper-value">0</span>
+      <button type="button" class="stepper-btn" data-delta="1">+</button>
+    </div>
+    <input type="hidden" id="f-exercise_detail" value="{{ profile.exercise_detail }}">
   </div>
 
   {{ qlabel('q_surgery') }}
