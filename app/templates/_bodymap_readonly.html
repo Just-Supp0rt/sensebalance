@@ -1,0 +1,68 @@
+{# Static, read-only mini body map for the client summary view.
+   Expects: profile (dict with focus_zones/avoid_zones), loc, t_loc, zone_label. #}
+<style>
+.rbm-wrap { display: flex; gap: 1rem; justify-content: center; background: #e7efe7; border-radius: var(--radius); padding: 1rem 0.5rem 0.25rem; margin-top: 0.5rem; }
+.rbm-figure { flex: 1; max-width: 200px; text-align: center; margin: 0; }
+.rbm-figure figcaption { font-weight: 700; font-size: 0.85rem; color: var(--muted); padding-bottom: 0.4rem; }
+.rbm-zone > * { fill: #f6f0ea; stroke: #b9a4b2; stroke-width: 1.5; }
+.rbm-zone.focus > * { fill: #81c784; stroke: var(--focus); }
+.rbm-zone.avoid > * { fill: #e57373; stroke: var(--avoid); }
+.rbm-ghost > * { fill: #eee6e0; stroke: #d5c8cf; stroke-width: 1; }
+.rbm-legend { display: flex; gap: 1.5rem; justify-content: center; margin: 0.6rem 0 0.2rem; font-size: 0.85rem; color: var(--muted); }
+.rbm-dot { display: inline-block; width: 13px; height: 13px; border-radius: 50%; margin-right: 0.3rem; vertical-align: -2px; }
+.rbm-dot--focus { background: #81c784; border: 2px solid var(--focus); }
+.rbm-dot--avoid { background: #e57373; border: 2px solid var(--avoid); }
+</style>
+{% macro rzone(zid) %}{% if zid in profile.focus_zones %}focus{% elif zid in profile.avoid_zones %}avoid{% endif %}{% endmacro %}
+<div class="rbm-wrap">
+  <figure class="rbm-figure">
+    <svg viewBox="0 0 200 380" role="img" aria-label="front">
+      <g class="rbm-zone {{ rzone('head') }}"><ellipse cx="100" cy="30" rx="20" ry="24"><title>{{ zone_label('head', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('neck') }}"><rect x="90" y="54" width="20" height="14" rx="6"><title>{{ zone_label('neck', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('shoulder_r') }}"><ellipse cx="60" cy="82" rx="18" ry="12"><title>{{ zone_label('shoulder_r', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('shoulder_l') }}"><ellipse cx="140" cy="82" rx="18" ry="12"><title>{{ zone_label('shoulder_l', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('chest') }}"><rect x="72" y="72" width="56" height="44" rx="10"><title>{{ zone_label('chest', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('abdomen') }}"><rect x="74" y="118" width="52" height="46" rx="10"><title>{{ zone_label('abdomen', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('arms_r') }}"><rect x="40" y="96" width="17" height="86" rx="8"><title>{{ zone_label('arms_r', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('arms_l') }}"><rect x="143" y="96" width="17" height="86" rx="8"><title>{{ zone_label('arms_l', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('hands_r') }}"><ellipse cx="48" cy="196" rx="10" ry="13"><title>{{ zone_label('hands_r', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('hands_l') }}"><ellipse cx="152" cy="196" rx="10" ry="13"><title>{{ zone_label('hands_l', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('quads_r') }}"><rect x="74" y="168" width="24" height="80" rx="11"><title>{{ zone_label('quads_r', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('quads_l') }}"><rect x="102" y="168" width="24" height="80" rx="11"><title>{{ zone_label('quads_l', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('calves_r') }}"><rect x="77" y="254" width="20" height="74" rx="9"><title>{{ zone_label('calves_r', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('calves_l') }}"><rect x="103" y="254" width="20" height="74" rx="9"><title>{{ zone_label('calves_l', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('feet_r') }}"><ellipse cx="86" cy="344" rx="13" ry="12"><title>{{ zone_label('feet_r', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('feet_l') }}"><ellipse cx="114" cy="344" rx="13" ry="12"><title>{{ zone_label('feet_l', loc) }}</title></ellipse></g>
+    </svg>
+    <figcaption>{{ t_loc('body_front') }}</figcaption>
+  </figure>
+
+  <figure class="rbm-figure">
+    <svg viewBox="0 0 200 380" role="img" aria-label="back">
+      <g class="rbm-ghost">
+        <ellipse cx="100" cy="30" rx="20" ry="24"/>
+        <rect x="90" y="54" width="20" height="14" rx="6"/>
+        <rect x="40" y="96" width="17" height="86" rx="8"/>
+        <rect x="143" y="96" width="17" height="86" rx="8"/>
+        <ellipse cx="48" cy="196" rx="10" ry="13"/>
+        <ellipse cx="152" cy="196" rx="10" ry="13"/>
+        <rect x="77" y="290" width="20" height="38" rx="9"/>
+        <rect x="103" y="290" width="20" height="38" rx="9"/>
+        <ellipse cx="86" cy="344" rx="13" ry="12"/>
+        <ellipse cx="114" cy="344" rx="13" ry="12"/>
+      </g>
+      <g class="rbm-zone {{ rzone('upper_back') }}"><rect x="70" y="72" width="60" height="48" rx="10"><title>{{ zone_label('upper_back', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('lower_back') }}"><rect x="74" y="122" width="52" height="42" rx="10"><title>{{ zone_label('lower_back', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('glutes_r') }}"><ellipse cx="87" cy="180" rx="15" ry="15"><title>{{ zone_label('glutes_r', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('glutes_l') }}"><ellipse cx="113" cy="180" rx="15" ry="15"><title>{{ zone_label('glutes_l', loc) }}</title></ellipse></g>
+      <g class="rbm-zone {{ rzone('hamstrings_r') }}"><rect x="74" y="200" width="24" height="84" rx="11"><title>{{ zone_label('hamstrings_r', loc) }}</title></rect></g>
+      <g class="rbm-zone {{ rzone('hamstrings_l') }}"><rect x="102" y="200" width="24" height="84" rx="11"><title>{{ zone_label('hamstrings_l', loc) }}</title></rect></g>
+    </svg>
+    <figcaption>{{ t_loc('body_back') }}</figcaption>
+  </figure>
+</div>
+
+<div class="rbm-legend">
+  <span><span class="rbm-dot rbm-dot--focus"></span>{{ t_loc('body_map_focus') }}</span>
+  <span><span class="rbm-dot rbm-dot--avoid"></span>{{ t_loc('body_map_avoid') }}</span>
+</div>

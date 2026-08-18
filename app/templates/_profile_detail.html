@@ -23,6 +23,8 @@
   {% endif %}
   {% if not profile.focus_zones and not profile.avoid_zones %}
   <p style="color:var(--muted);">—</p>
+  {% else %}
+  {% include '_bodymap_readonly.html' %}
   {% endif %}
 </div>
 

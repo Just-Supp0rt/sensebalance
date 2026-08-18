@@ -66,7 +66,7 @@ STRINGS = {
                         "terapeutka mohla bezpečně poskytnout masáž (např. vynechat oblasti při "
                         "zdravotním omezení). Údaje uchováváme, dokud nepožádáte o jejich smazání. "
                         "O výmaz nebo náhled do svých údajů můžete kdykoliv požádat na "
-                        "dejv.por@gmail.com.",
+                        "e-mailu:",
         "agree": "Souhlasím",
         "signature": "Podpis",
         "clear": "Smazat",
@@ -194,7 +194,7 @@ STRINGS = {
                         "the health information you fill in, and your signature — solely so the "
                         "therapist can give you a safe massage (e.g. avoiding areas due to a health "
                         "condition). We keep it until you ask us to delete it. You can request "
-                        "deletion or a copy of your data at any time at dejv.por@gmail.com.",
+                        "deletion or a copy of your data at any time by emailing:",
         "agree": "Agree",
         "signature": "Signature",
         "clear": "Clear",
