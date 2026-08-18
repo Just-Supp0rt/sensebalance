@@ -22,7 +22,7 @@
   </div>
   {{ qlabel('email') }}
   {% if kiosk %}
-  <input type="email" id="f-email" autocomplete="email" placeholder="vas@email.cz">
+  <input type="email" id="f-email" autocomplete="email" placeholder="vas@email.cz" value="{{ profile.email }}">
   {% else %}
   <input type="email" id="f-email" value="{{ user.email }}" readonly
          style="background:var(--bg);color:var(--muted);">

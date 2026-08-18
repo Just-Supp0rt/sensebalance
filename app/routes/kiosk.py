@@ -223,7 +223,11 @@ async def kiosk_search_submit(
     user = db.find_user_by_identifier(norm_id) if norm_id else None
 
     if not user:
-        return _resp(request, "kiosk_search.html", _search_ctx(no_match=True, error=None))
+        return _resp(
+            request,
+            "kiosk_search.html",
+            _search_ctx(no_match=True, error=None, searched=identifier.strip()),
+        )
 
     last_visit = db.latest_visit(user["id"])
     return _resp(
@@ -259,13 +263,21 @@ async def kiosk_search_confirm(request: Request, user_id: int = Form(...)):
 # --- first visit ---
 
 @router.get("/kiosk/new", response_class=HTMLResponse)
-async def kiosk_new_form(request: Request):
+async def kiosk_new_form(request: Request, identifier: str = ""):
     if not _kiosk_ok(request):
         return RedirectResponse("/", status_code=302)
+    profile = _profile_to_dict(None)
+    # Aom already typed this on the search screen and it matched no one —
+    # don't make her (or the client) type it a second time on this form.
+    identifier = identifier.strip()
+    if "@" in identifier:
+        profile["email"] = identifier
+    elif identifier:
+        profile["phone"] = identifier
     return _resp(
         request,
         "kiosk_new.html",
-        {"profile": _profile_to_dict(None), "kiosk": True},
+        {"profile": profile, "kiosk": True},
     )
 
 

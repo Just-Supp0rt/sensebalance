@@ -30,7 +30,7 @@
 
   {% if no_match %}
   <div class="flash error" style="margin-top:1rem;">{{ t_loc('search_no_match') }}</div>
-  <a href="/kiosk/new" class="first-visit-cta">
+  <a href="/kiosk/new{% if searched %}?identifier={{ searched | urlencode }}{% endif %}" class="first-visit-cta">
     <span class="th">🌿 {{ t_loc('first_visit_cta') }}</span>
     <span class="bi">{{ bi('first_visit_cta')[0] }} · {{ bi('first_visit_cta')[1] }}</span>
   </a>

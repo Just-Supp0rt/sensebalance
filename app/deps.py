@@ -93,6 +93,7 @@ def _profile_to_dict(profile) -> dict:
             "note_th": "",
             "note_en": "",
             "phone": "",
+            "email": "",
             "has_health_problems": "",
             "health_problems": "",
             "pregnancy": "",
